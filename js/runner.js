@@ -16,6 +16,24 @@ def _clean_error(exc):
     text = traceback.format_exception_only(type(exc), exc)[-1].strip()
     return text + ("\\n" + "\\n".join(lines[-3:]) if lines else "")
 
+def _perf(code, setup, pre, call):
+    import time, hashlib
+    res = {"secs": 0, "digest": "", "error": None}
+    ns = {"__name__": "__main__"}
+    try:
+        if setup:
+            exec(setup, ns)
+        with contextlib.redirect_stdout(io.StringIO()):
+            exec(compile(code, "<your code>", "exec"), ns)
+            exec(pre, ns)
+            t = time.perf_counter()
+            got = eval(call, ns)
+            res["secs"] = time.perf_counter() - t
+        res["digest"] = hashlib.sha1(repr(got).encode()).hexdigest()
+    except BaseException as e:
+        res["error"] = _clean_error(e)
+    return json.dumps(res)
+
 def _run(code, tests, setup):
     out = io.StringIO()
     res = {"stdout": "", "error": None, "tests": []}
@@ -56,13 +74,21 @@ onmessage = async (e) => {
   const m = e.data;
   try {
     if (m.type === 'boot') { await boot(m.base, m.harness); postMessage({ type: 'ready' }); return; }
+    if (m.type === 'perf') {
+      py.globals.set('_code', m.code);
+      py.globals.set('_setup', m.setup || '');
+      py.globals.set('_pre', m.pre);
+      py.globals.set('_call', m.call);
+      postMessage({ type: 'result', id: m.id, result: JSON.parse(py.runPython('_perf(_code, _setup, _pre, _call)')) });
+      return;
+    }
     py.globals.set('_code', m.code);
     py.globals.set('_tests', JSON.stringify(m.tests || []));
     py.globals.set('_setup', m.setup || '');
     const r = py.runPython('_run(_code, json.loads(_tests), _setup)');
     postMessage({ type: 'result', id: m.id, result: JSON.parse(r) });
   } catch (err) {
-    postMessage({ type: m.type === 'boot' ? 'boot-error' : 'result', id: m.id, error: String(err && err.message || err) });
+    postMessage({ type: m.type === 'boot' ? 'boot-error' : 'result', id: m.id, fatal: true, error: String(err && err.message || err) });
   }
 };`;
 
@@ -90,7 +116,10 @@ onmessage = async (e) => {
         else if (m.type === 'boot-error') { clearTimeout(bootTimer); fail('Python could not load here. It needs an internet connection, and some hosted views block it.'); }
         else if (m.type === 'result') {
           const w = waiting.get(m.id);
-          if (w) { waiting.delete(m.id); w(m.error ? { error: m.error, stdout: '', tests: [] } : m.result); }
+          /* A crash such as a stack overflow leaves Python unusable, so start a fresh one next time. */
+          if (m.fatal) { worker.terminate(); worker = null; ready = null; }
+          const friendly = /call stack|too much recursion/i.test(m.error || '') ? 'Your code recursed too deeply and ran out of stack. Check your base case, or use a loop.' : m.error;
+          if (w) { waiting.delete(m.id); w(m.error ? { error: friendly, stdout: '', tests: [] } : m.result); }
         }
       };
       worker.onerror = () => { clearTimeout(bootTimer); fail('Python could not load here. It needs an internet connection, and some hosted views block it.'); };
@@ -99,8 +128,42 @@ onmessage = async (e) => {
     return ready;
   }
 
+  /* Runs one timed job, stopping it if it passes the limit. Resolves null when stopped. */
+  async function timedRun(code, setup, spec, limitMs) {
+    await start();
+    const id = ++seq;
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        waiting.delete(id);
+        worker.terminate();
+        worker = null;
+        ready = null;
+        resolve(null);
+      }, limitMs);
+      waiting.set(id, (r) => { clearTimeout(timer); resolve(r); });
+      worker.postMessage({ type: 'perf', id, code, setup, pre: spec.pre, call: spec.call });
+    });
+  }
+
   g.Py = {
     get isReady() { return !!worker; },
+    /* Times an answer on a large input against the reference on this same device.
+       Fails only if it's over 30 times slower and over 1.5 seconds, so slow phones and
+       reasonable alternatives such as sorting still pass. */
+    async speedCheck(question, spec, code) {
+      const t0 = performance.now();
+      const ref = await timedRun(question.solution, question.setup || '', spec, 60000);
+      const refWall = performance.now() - t0;
+      if (!ref || ref.error) return { state: 'unknown' };
+      const budget = Math.max(1500, ref.secs * 30000);
+      /* The wall limit also covers loading the code and building the input. */
+      const mine = await timedRun(code, question.setup || '', spec, budget + (refWall - ref.secs * 1000) * 3 + 500);
+      if (!mine) return { state: 'slow' };
+      if (mine.error) return { state: 'error', error: mine.error };
+      if (mine.secs * 1000 > budget) return { state: 'slow' };
+      if (mine.digest !== ref.digest) return { state: 'wrong' };
+      return { state: 'ok' };
+    },
     async run(code, tests, setup, onStatus) {
       await start(onStatus);
       const id = ++seq;

@@ -62,6 +62,50 @@ for t in data:
         if buf.getvalue().rstrip("\n") != q["out"].rstrip("\n"):
             print("PY QUESTION OUTPUT", q["id"], repr(buf.getvalue()), "want", repr(q["out"])); fails += 1
 print("python question samples", npy, "skipped", skipped)
+# Speed checks: the reference must be quick, and a correct slow answer must not finish in time.
+import subprocess, concurrent.futures as cf
+RUN = """
+import sys, json, time
+spec = json.load(sys.stdin)
+ns = {"__name__": "__main__"}
+if spec["setup"]:
+    exec(spec["setup"], ns)
+exec(spec["code"], ns)
+exec(spec["pre"], ns)
+t = time.perf_counter()
+eval(spec["call"], ns)
+print(time.perf_counter() - t)
+"""
+def timed(q, code, p, limit):
+    spec = json.dumps({"setup": q.get("setup") or "", "code": code, "pre": p["pre"], "call": p["call"]})
+    try:
+        r = subprocess.run([sys.executable, "-c", RUN], input=spec, capture_output=True, text=True, timeout=limit)
+    except subprocess.TimeoutExpired:
+        return None, ""
+    return (float(r.stdout.strip().splitlines()[-1]) if r.returncode == 0 else -1), r.stderr[-300:]
+meta = next(t for t in data if "perf" in t)
+by_id = {c["id"]: c for t in data for c in t["coding"]}
+def check(i):
+    p, q, out = meta["perf"][i], by_id[i], []
+    secs, err = timed(q, q["solution"], p, 30)
+    if secs is None or secs < 0 or secs > 1.0:
+        out.append(f"SPEED REFERENCE {i}: {secs} {err}")
+    try:
+        r = run(meta["slow"][i], q.get("setup"), q["tests"])
+        if not all(x[3] for x in r):
+            out.append(f"SLOW ANSWER WRONG {i}: {[x[:3] for x in r if not x[3]]}"[:300])
+    except Exception as e:
+        out.append(f"SLOW ANSWER CRASH {i}: {e!r}")
+    secs2, err2 = timed(q, meta["slow"][i], p, 6)
+    if secs2 is not None:
+        out.append(f"SLOW ANSWER NOT CAUGHT {i}: {secs2} {err2}")
+    return out
+if meta.get("perf"):
+    with cf.ThreadPoolExecutor(6) as ex:
+        for out in ex.map(check, list(meta["perf"])):
+            for line in out:
+                print(line); fails += 1
+    print("speed checks", len(meta["perf"]))
 print("coding questions", ncode, "failures", fails)
 
 if len(sys.argv) > 2:

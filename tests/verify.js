@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = process.argv[2] || path.join(__dirname, '..'), out = process.argv[3] || path.join(require('os').tmpdir(), 'step-through-data.json');
 const w = {}; w.window = w; w.console = console; w.Math = Math; w.JSON = JSON;
 const ctx = vm.createContext(w);
-['engine', 'viz-1', 'viz-2', 'viz-3', 'viz-4', 'content-1', 'content-2', 'content-3', 'content-4', 'interview-data', 'python-questions'].forEach((f) => {
+['engine', 'viz-1', 'viz-2', 'viz-3', 'viz-4', 'content-1', 'content-2', 'content-3', 'content-4', 'interview-data', 'python-questions', 'efficiency'].forEach((f) => {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 });
 const { VIZ, TOPICS, STAGES } = w;
@@ -59,6 +59,13 @@ w.PYQ.forEach((g) => g.items.forEach((q) => {
   if (q.code && q.out == null) bad('no output for ' + q.id);
   if (q.topic && !topicIds.has(q.topic)) bad('unknown topic ' + q.topic);
 }));
+const SLOW = require('./slow-solutions.js'), codingIds = new Set(TOPICS.flatMap((t) => t.coding.map((c) => c.id)));
+Object.keys(w.PERF).forEach((id) => {
+  if (!codingIds.has(id)) bad('speed check for unknown question ' + id);
+  if (!SLOW[id]) bad('no slow answer for ' + id);
+});
+Object.keys(SLOW).forEach((id) => { if (!w.PERF[id]) bad('slow answer without a check ' + id); });
+if (codingIds.size !== TOPICS.flatMap((t) => t.coding).length) bad('duplicate coding question id');
 const counts = {};
 Object.values(VIZ).forEach((def) => {
   const d = w.defaultValues(def);
@@ -83,6 +90,6 @@ Object.values(VIZ).forEach((def) => def.inputs.forEach((i) => {
   try { w.parseVizInput(i, Array.isArray(i.def) ? i.def.join(',') : i.def); } catch (e) { bad(`${def.id} default input: ${e.message}`); }
 }));
 console.log('topics', TOPICS.length, 'viz', Object.keys(VIZ).length, 'frames(max)', Math.max(...Object.values(counts)), 'errors', errs);
-fs.writeFileSync(out, JSON.stringify(TOPICS.map((t) => ({ id: t.id, code: t.code, coding: t.coding, leetcode: t.leetcode })).concat({ id: 'interview-list', code: [], coding: [], stretch: true, leetcode: w.INTERVIEW.flatMap((g) => g.items), pyq: w.PYQ.flatMap((g) => g.items) })));
+fs.writeFileSync(out, JSON.stringify(TOPICS.map((t) => ({ id: t.id, code: t.code, coding: t.coding, leetcode: t.leetcode })).concat({ id: 'interview-list', code: [], coding: [], stretch: true, leetcode: w.INTERVIEW.flatMap((g) => g.items), pyq: w.PYQ.flatMap((g) => g.items), perf: w.PERF, slow: SLOW })));
 console.log('data written to', out);
 process.exit(errs ? 1 : 0);

@@ -321,13 +321,26 @@
   }
 
   /* ---------- coding ---------- */
+  const targetLine = (c) => (window.PERF[c.id] ? `<p class="target">Target: <code>${esc(window.PERF[c.id].target)}</code> time. Correct answers are also timed on a large input.</p>` : '');
+  /* Runs the speed check and says what to do about the result. Only unknown or ok count as solved. */
+  async function speedVerdict(c, code) {
+    const p = window.PERF[c.id];
+    if (!p) return { ok: true, html: '' };
+    const r = await Py.speedCheck(c, p, code);
+    if (r.state === 'ok') return { ok: true, html: `It's also fast enough for ${esc(p.size)}.` };
+    if (r.state === 'unknown') return { ok: true, html: '' };
+    if (r.state === 'slow') return { ok: false, html: `Your answers are correct, but too slow for ${esc(p.size)}. Target: <code>${esc(p.target)}</code>. ${fmt(p.tip)}` };
+    if (r.state === 'wrong') return { ok: false, html: `It passes the small tests but gives a different answer on ${esc(p.size)}. Check for edge cases.` };
+    return { ok: false, html: `It passes the small tests but crashes on ${esc(p.size)}: <code>${esc(r.error.split('\n')[0])}</code>. Very deep recursion is a common cause.` };
+  }
+
   function mountCoding(t) {
     const box = document.getElementById('coding'), r = rec(t.id), drafts = read(DRAFT, {});
     box.innerHTML = t.coding.map((c, i) => {
       const did = `${t.id}/${c.id}`;
       return `<article class="task" data-i="${i}">
         <header><h3><span class="tick ${r.c[c.id] ? 'on' : ''}" data-tick aria-hidden="true">${r.c[c.id] ? '✓' : ''}</span>${esc(c.title)}</h3></header>
-        <p class="prompt">${fmt(c.prompt)}</p>
+        <p class="prompt">${fmt(c.prompt)}</p>${targetLine(c)}
         <label class="sr" for="ed-${c.id}">Your Python code for ${esc(c.title)}</label>
         <textarea class="editor" id="ed-${c.id}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" rows="${Math.max(7, c.starter.split('\n').length + 3)}">${esc(drafts[did] != null ? drafts[did] : c.starter)}</textarea>
         <div class="task-btns">
@@ -379,7 +392,17 @@
           html += `<ul class="tests">${res.tests.map((x) => `<li class="${x.pass ? 'ok' : 'no'}"><span class="mark" aria-hidden="true">${x.pass ? '✓' : '✕'}</span><div><code>${esc(x.call)}</code>${x.pass ? '' : `<small>Expected <code>${esc(x.expected)}</code>, got <code>${esc(x.got)}</code></small>`}</div></li>`).join('')}</ul>`;
         }
         out.innerHTML = html;
-        if (all) markSolved();
+        if (all) {
+          const v = out.querySelector('.verdict');
+          if (window.PERF[c.id]) {
+            v.className = 'verdict running';
+            v.textContent = 'All tests passed. Now timing it on a large input…';
+          }
+          const sp = await speedVerdict(c, ta.value);
+          v.className = `verdict ${sp.ok ? 'ok' : 'no'}`;
+          v.innerHTML = sp.ok ? `All tests passed. ${sp.html} Solved!` : sp.html;
+          if (sp.ok) markSolved();
+        }
       } catch (ex) {
         out.innerHTML = `<div class="err"><b>${esc(ex.message)}</b><p>You can still practise: solve this in your own Python editor, then mark it here.</p><button type="button" class="btn small ghost" data-manual>I solved this elsewhere</button></div>`;
       }
@@ -534,7 +557,7 @@
       return;
     }
     box.innerHTML = `<p class="mock-clock"><span class="sr">Time left: </span><b id="mock-left">${clock(mock.left)}</b><button type="button" class="btn small ghost" id="mock-finish">Finish now</button></p>
-      <div class="mock-tasks">${mock.qs.map((q, i) => `<article class="task" data-m="${i}"><h3>Question ${i + 1}: ${esc(q.c.title)}</h3><p class="prompt">${fmt(q.c.prompt)}</p>
+      <div class="mock-tasks">${mock.qs.map((q, i) => `<article class="task" data-m="${i}"><h3>Question ${i + 1}: ${esc(q.c.title)}</h3><p class="prompt">${fmt(q.c.prompt)}</p>${targetLine(q.c)}
         <label class="sr" for="mock-ed-${i}">Your Python code for question ${i + 1}</label>
         <textarea class="editor" id="mock-ed-${i}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" rows="${Math.max(9, q.c.starter.split('\n').length + 4)}">${esc(q.code)}</textarea>
         <div class="task-btns"><button type="button" class="btn small" data-mock-run="${i}">Run and check</button></div><div class="out" aria-live="polite"></div></article>`).join('')}</div>`;
@@ -698,8 +721,14 @@
     try {
       const res = await Py.run(card.querySelector('textarea').value, q.c.tests, q.c.setup || '');
       const passed = res.tests.filter((x) => x.pass).length, all = !res.error && res.tests.length > 0 && passed === res.tests.length;
-      if (all) q.solved = true;
-      out.innerHTML = res.error ? `<div class="err"><b>Your code stopped with an error.</b><pre>${esc(res.error)}</pre></div>` : `<p class="verdict ${all ? 'ok' : 'no'}">${all ? 'All tests passed.' : `${passed} of ${res.tests.length} tests passed.`}</p>`;
+      out.innerHTML = res.error ? `<div class="err"><b>Your code stopped with an error.</b><pre>${esc(res.error)}</pre></div>` : `<p class="verdict ${all ? 'running' : 'no'}">${all ? 'All tests passed. Now checking speed…' : `${passed} of ${res.tests.length} tests passed.`}</p>`;
+      if (all) {
+        const sp = await speedVerdict(q.c, card.querySelector('textarea').value);
+        q.solved = sp.ok;
+        const v = out.querySelector('.verdict');
+        v.className = `verdict ${sp.ok ? 'ok' : 'no'}`;
+        v.innerHTML = sp.ok ? `All tests passed. ${sp.html}` : sp.html;
+      }
     } catch (ex) { out.innerHTML = `<div class="err"><b>${esc(ex.message)}</b></div>`; }
     btn.disabled = false;
   }
