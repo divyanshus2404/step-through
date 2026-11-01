@@ -6,7 +6,7 @@ Learn data structures and algorithms in Python from zero, with animations you ca
 
 ## What's inside
 
-40 topics in order, from Python basics to segment trees. Each topic has:
+45 topics in order, from Python basics to segment trees, Fenwick trees and bitmask DP. Each topic has:
 
 - a plain-English explanation
 - step-by-step animations with play, pause, step and speed controls, most with input you can edit
@@ -16,7 +16,9 @@ Learn data structures and algorithms in Python from zero, with animations you ca
 - homework and real-life questions
 - LeetCode problems, Easy to Medium
 
-Progress saves in your browser, so it stays on that device and browser only.
+There's also an interview page with a 30-minute timed mock and 113 free LeetCode problems grouped by pattern.
+
+Progress saves in your browser and is never sent anywhere. To move it to another device, use **Back up progress** and **Restore backup** at the bottom of the homepage.
 
 ## Run it locally
 
@@ -29,9 +31,11 @@ There is nothing to install or build. Open `index.html` in a browser. Running Py
 | `js/engine.js` | Animation engine and player |
 | `js/viz-*.js` | The animations |
 | `js/content-*.js` | The curriculum |
+| `js/interview-data.js` | Interview problem list |
 | `js/runner.js` | Runs Python in a Web Worker |
 | `js/app.js` | Pages, routing and progress |
-| `tests/` | Content and animation checks |
+| `tests/` | Content checks and browser tests |
+| `vercel.json` | Security headers |
 
 ## Tests
 
@@ -45,7 +49,13 @@ python3 tests/verify.py /tmp/data.json
 
 The first command checks the structure of every topic and runs every animation with default and random inputs. The second runs every reference solution against its tests, confirms the starter code doesn't already pass, and runs the code examples. Add any extra argument to the second command, such as `lc`, to also check LeetCode numbers, titles and difficulty against leetcode.com.
 
-These checks run on every push and pull request.
+Browser tests run the real site with the same security headers as production, at desktop and phone widths, and include an accessibility audit in both themes:
+
+```bash
+cd tests && npm ci && npx playwright install chromium && npm test
+```
+
+All of these run on every push and pull request.
 
 ## Deployment
 

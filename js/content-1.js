@@ -454,7 +454,7 @@ print(count_k([1, -1, 1], 1))   # 3` }],
   ],
   homework: ["Trace `count_k([1, 2, 3], 3)` on paper, writing the `seen` dict at each step.", "Build a 2-D prefix sum for a grid and answer one rectangle query.", "Use the animation and predict each answer before you press Next."],
   reallife: [
-    { q: "A bank has 10 years of daily balances changes and gets thousands of 'how much changed between date A and date B?' questions. What should it store?", a: "A running total per day. Each question becomes a single subtraction rather than adding up thousands of days." },
+    { q: "A bank has 10 years of daily balance changes and gets thousands of 'how much changed between date A and date B?' questions. What should it store?", a: "A running total per day. Each question becomes a single subtraction rather than adding up thousands of days." },
     { q: "How does a fitness app show steps for any date range almost instantly?", a: "It can keep cumulative totals by day and subtract two readings, exactly like a prefix sum." },
   ],
   leetcode: [[303, 'Range Sum Query - Immutable', 'range-sum-query-immutable', 'Easy'], [724, 'Find Pivot Index', 'find-pivot-index', 'Easy'], [560, 'Subarray Sum Equals K', 'subarray-sum-equals-k', 'Medium'], [525, 'Contiguous Array', 'contiguous-array', 'Medium']],

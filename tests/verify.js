@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = process.argv[2] || path.join(__dirname, '..'), out = process.argv[3] || path.join(require('os').tmpdir(), 'step-through-data.json');
 const w = {}; w.window = w; w.console = console; w.Math = Math; w.JSON = JSON;
 const ctx = vm.createContext(w);
-['engine', 'viz-1', 'viz-2', 'viz-3', 'content-1', 'content-2', 'content-3'].forEach((f) => {
+['engine', 'viz-1', 'viz-2', 'viz-3', 'viz-4', 'content-1', 'content-2', 'content-3', 'content-4', 'interview-data'].forEach((f) => {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 });
 const { VIZ, TOPICS, STAGES } = w;
@@ -75,6 +75,6 @@ Object.values(VIZ).forEach((def) => def.inputs.forEach((i) => {
   try { w.parseVizInput(i, Array.isArray(i.def) ? i.def.join(',') : i.def); } catch (e) { bad(`${def.id} default input: ${e.message}`); }
 }));
 console.log('topics', TOPICS.length, 'viz', Object.keys(VIZ).length, 'frames(max)', Math.max(...Object.values(counts)), 'errors', errs);
-fs.writeFileSync(out, JSON.stringify(TOPICS.map((t) => ({ id: t.id, code: t.code, coding: t.coding, leetcode: t.leetcode }))));
+fs.writeFileSync(out, JSON.stringify(TOPICS.map((t) => ({ id: t.id, code: t.code, coding: t.coding, leetcode: t.leetcode })).concat({ id: 'interview-list', code: [], coding: [], stretch: true, leetcode: w.INTERVIEW.flatMap((g) => g.items) })));
 console.log('data written to', out);
 process.exit(errs ? 1 : 0);

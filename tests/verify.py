@@ -46,7 +46,7 @@ if len(sys.argv) > 2:
     seen = {}
     for t in data:
         for n, title, slug, diff in t["leetcode"]:
-            seen.setdefault(slug, []).append((t["id"], n, title, diff))
+            seen.setdefault(slug, []).append((t["id"], n, title, diff, t.get("stretch", False)))
     bad = 0
     q = 'query q($s:String!){question(titleSlug:$s){questionFrontendId title difficulty isPaidOnly}}'
     for slug, uses in seen.items():
@@ -58,13 +58,13 @@ if len(sys.argv) > 2:
             print("LC ERROR", slug, e); bad += 1; continue
         if not d:
             print("LC MISSING", slug); bad += 1; continue
-        for tid, n, title, diff in uses:
+        for tid, n, title, diff, stretch in uses:
             issues = []
             if str(n) != d["questionFrontendId"]: issues.append(f'id {n} vs {d["questionFrontendId"]}')
             if title != d["title"]: issues.append(f'title {title!r} vs {d["title"]!r}')
             if diff != d["difficulty"]: issues.append(f'diff {diff} vs {d["difficulty"]}')
             if d["isPaidOnly"]: issues.append('premium')
-            if d["difficulty"] == "Hard": issues.append('hard')
+            if d["difficulty"] == "Hard" and not stretch: issues.append('hard')
             if issues:
                 print("LC", tid, slug, "; ".join(issues)); bad += 1
         time.sleep(0.12)
