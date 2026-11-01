@@ -407,7 +407,7 @@
             <label class="pl-speed"><span class="sr">Speed</span><select id="${id}-speed" aria-label="Speed">${SPEEDS.map(([n, v]) => `<option value="${v}" ${v === 1 ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
           </div>
         </div>
-        ${codeLines.length ? `<div class="pl-code"><div class="pl-code-h">Python, running live</div><pre>${codeLines.map((l, i) => `<div class="cl" data-l="${i + 1}"><span class="ln">${i + 1}</span><span class="lc">${g.highlightPy ? g.highlightPy(l) || ' ' : esc(l)}</span></div>`).join('')}</pre></div>` : ''}
+        ${codeLines.length ? `<div class="pl-code"><div class="pl-code-h">Python, running live</div><pre tabindex="0" aria-label="Python code">${codeLines.map((l, i) => `<div class="cl" data-l="${i + 1}"><span class="ln">${i + 1}</span><span class="lc">${g.highlightPy ? g.highlightPy(l) || ' ' : esc(l)}</span></div>`).join('')}</pre></div>` : ''}
       </div>
       ${hasInputs ? `<form class="pl-input" novalidate>
         <div class="pl-fields">${def.inputs.map((i, n) => {

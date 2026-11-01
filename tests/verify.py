@@ -40,13 +40,35 @@ for t in data:
                 exec(s["src"], {"__name__": "__main__"})
         except Exception as e:
             print("SNIPPET CRASH", t["id"], s["title"], repr(e)); fails += 1
+npy = skipped = 0
+for t in data:
+    for q in t.get("pyq", []):
+        if "code" not in q:
+            continue
+        need = q.get("needs")
+        if need:
+            try:
+                __import__(need)
+            except ImportError:
+                skipped += 1
+                continue
+        npy += 1
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                exec(q["code"], {"__name__": "__main__"})
+        except Exception as e:
+            print("PY QUESTION CRASH", q["id"], repr(e)); fails += 1; continue
+        if buf.getvalue().rstrip("\n") != q["out"].rstrip("\n"):
+            print("PY QUESTION OUTPUT", q["id"], repr(buf.getvalue()), "want", repr(q["out"])); fails += 1
+print("python question samples", npy, "skipped", skipped)
 print("coding questions", ncode, "failures", fails)
 
 if len(sys.argv) > 2:
     seen = {}
     for t in data:
         for n, title, slug, diff in t["leetcode"]:
-            seen.setdefault(slug, []).append((t["id"], n, title, diff))
+            seen.setdefault(slug, []).append((t["id"], n, title, diff, t.get("stretch", False)))
     bad = 0
     q = 'query q($s:String!){question(titleSlug:$s){questionFrontendId title difficulty isPaidOnly}}'
     for slug, uses in seen.items():
@@ -58,13 +80,13 @@ if len(sys.argv) > 2:
             print("LC ERROR", slug, e); bad += 1; continue
         if not d:
             print("LC MISSING", slug); bad += 1; continue
-        for tid, n, title, diff in uses:
+        for tid, n, title, diff, stretch in uses:
             issues = []
             if str(n) != d["questionFrontendId"]: issues.append(f'id {n} vs {d["questionFrontendId"]}')
             if title != d["title"]: issues.append(f'title {title!r} vs {d["title"]!r}')
             if diff != d["difficulty"]: issues.append(f'diff {diff} vs {d["difficulty"]}')
             if d["isPaidOnly"]: issues.append('premium')
-            if d["difficulty"] == "Hard": issues.append('hard')
+            if d["difficulty"] == "Hard" and not stretch: issues.append('hard')
             if issues:
                 print("LC", tid, slug, "; ".join(issues)); bad += 1
         time.sleep(0.12)

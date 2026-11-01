@@ -13,6 +13,7 @@
   const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private window */ } };
   let P = read(KEY, { t: {} });
+  if (!P || typeof P.t !== 'object' || !P.t) P = { t: {} };
   const rec = (id) => (P.t[id] = P.t[id] || { w: {}, q: null, c: {}, h: {}, l: {} });
   let cloud = null, cloudTimer = 0;
   function save() {
@@ -73,8 +74,9 @@
 
   /* ---------- shell ---------- */
   function header() {
-    return `<header class="top"><div class="top-in">
+    return `<a class="skip" href="#" data-sec="main-content">Skip to content</a><header class="top"><div class="top-in">
       <a class="brand" href="#" data-go=""><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="20" width="7" height="9" rx="2" class="b1"/><rect x="12.5" y="12" width="7" height="17" rx="2" class="b2"/><rect x="22" y="3" width="7" height="26" rx="2" class="b3"/></svg><span>Step Through</span></a>
+      <a class="nav-link" href="#interview" data-go="interview">Interview</a>
       <div class="top-meter" title="All checkpoints across the syllabus"><span class="meter"><i data-bar></i></span><b data-pct></b></div>
       <button type="button" class="theme" id="theme-toggle" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 7a5 5 0 0 1 0 10z" class="half"/></svg></button>
     </div></header>`;
@@ -133,7 +135,7 @@
     current = { kind: 'home' };
     document.title = 'Step Through';
     const nx = nextTopic(), started = Object.keys(P.t).length > 0;
-    app.innerHTML = header() + `<main class="home">
+    app.innerHTML = header() + `<main class="home" id="main-content" tabindex="-1">
       <section class="hero wrap">
         <div class="hero-txt">
           <p class="eyebrow">Python · total beginner to advanced</p>
@@ -149,13 +151,13 @@
           <div class="counts" id="counts"></div>
         </div>
         <div class="segs" id="segs"></div>
-        <div class="filters" role="group" aria-label="Filter topics">${[['all', 'All'], ['todo', 'Left to do'], ['doing', 'In progress'], ['done', 'Learned']].map(([k, l]) => `<button type="button" data-f="${k}" class="${filter === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="filters" role="group" aria-label="Filter topics">${[['all', 'All'], ['todo', 'Left to do'], ['doing', 'In progress'], ['done', 'Learned']].map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${filter === k}" class="${filter === k ? 'on' : ''}">${l}</button>`).join('')}</div>
         <p class="legend"><span class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></span> Each topic has four checkpoints: watch the animations, pass the quiz, solve the code, finish the homework.</p>
       </section>
       <div class="syllabus wrap" id="syllabus"></div>
       <footer class="foot wrap">
-        <p>Progress saves automatically in this browser.</p>
-        <div id="reset-zone"><button type="button" class="link" id="reset">Reset all progress</button></div>
+        <p>Progress saves automatically in this browser. Nothing is sent anywhere.</p>
+        <div class="foot-btns"><button type="button" class="link" id="backup">Back up progress</button><label class="link" for="restore">Restore backup</label><input class="sr" type="file" id="restore" accept="application/json,.json"><span id="reset-zone"><button type="button" class="link" id="reset">Reset all progress</button></span></div>
       </footer>
     </main>`;
     const def = Object.assign({}, VIZ['sort-bubble'], { code: null, inputs: [], title: 'Bubble sort, running live', intro: '', build: (_, add) => VIZ['sort-bubble'].build({ arr: [5, 2, 8, 1, 6, 3] }, add) });
@@ -167,7 +169,7 @@
     const cta = document.getElementById('hero-cta');
     if (cta) {
       const started = TOPICS.some((x) => status(x).state !== 'todo');
-      cta.innerHTML = nx ? `<a class="btn" href="#${nx.id}" data-go="${nx.id}">${started ? 'Continue' : 'Start'}: ${esc(nx.title)}</a><span class="sub">${started ? `Topic ${nx.n} of ${TOPICS.length - 1}` : 'Begins with variables. No setup needed.'}</span>` : '<span class="sub">You have learned every topic in the syllabus.</span>';
+      cta.innerHTML = nx ? `<a class="btn" href="#${nx.id}" data-go="${nx.id}">${started ? 'Continue' : 'Start'}: ${esc(nx.title)}</a><a class="btn ghost" href="#interview" data-go="interview">Interview practice</a><span class="sub">${started ? `Topic ${nx.n} of ${TOPICS.length - 1}` : 'Begins with variables. No setup needed.'}</span>` : '<span class="sub">You have learned every topic in the syllabus.</span>';
     }
     const c = document.getElementById('counts');
     if (c) c.innerHTML = `<span><b>${t.done}</b> learned</span><span><b>${t.doing}</b> in progress</span><span><b>${t.todo}</b> left</span><span class="c-pct"><b>${t.pct}%</b> of checkpoints</span>`;
@@ -186,7 +188,7 @@
     P.last = t.id;
     write(KEY, P);
     const st = STAGES.find((x) => x.id === t.stage), prev = TOPICS[t.n - 1], next = TOPICS[t.n + 1], r = rec(t.id);
-    app.innerHTML = header() + `<main class="topic">
+    app.innerHTML = header() + `<main class="topic" id="main-content" tabindex="-1">
       <div class="wrap t-head">
         <a class="back" href="#" data-go="">← Syllabus</a>
         <p class="eyebrow">${esc(st.title)} · <span class="lvl lvl-${st.level.toLowerCase()}">${st.level}</span> · about ${t.mins} min</p>
@@ -213,7 +215,7 @@
           <div id="snips"></div>
         </section>
         <section id="s-quiz" class="sec"><h2>Quick quiz</h2><p class="sec-note">Answer all ${t.quiz.length}. You pass with at least ${passMark(t)} right, and you can retake it.</p><div id="quiz"></div></section>
-        <section id="s-code" class="sec"><h2>Coding practice</h2><p class="sec-note">Write Python here and run it in your browser. Tests check your answer right away.</p><div id="coding"></div></section>
+        <section id="s-code" class="sec"><h2>Coding practice</h2><p class="sec-note">Write Python here and run it in your browser. Tests check your answer right away. In the editor, Tab adds spaces. Press Esc, then Tab, to move out of it.</p><div id="coding"></div></section>
         <section id="s-home" class="sec"><h2>Homework</h2><p class="sec-note">Do these away from the screen where you can. Tick each one when finished.</p><ul class="hw" id="hw"></ul></section>
         <section id="s-real" class="sec"><h2>Real-life questions</h2><p class="sec-note">Think about your answer first, then open it.</p><div class="reals">${t.reallife.map((q) => `<details class="real"><summary>${fmt(q.q)}</summary><p>${fmt(q.a)}</p></details>`).join('')}</div></section>
         <section id="s-lc" class="sec"><h2>On LeetCode</h2><p class="sec-note">Real problems to try next, easiest first. These open on leetcode.com. Ticks are a bonus and don't affect your checkpoints.</p><ul class="lc-list" id="lc"></ul></section>
@@ -260,7 +262,7 @@
   }
 
   function codeBlock(src, id) {
-    return `<pre class="py" id="${id}">${src.split('\n').map((l) => g_h(l)).join('\n')}</pre>`;
+    return `<pre class="py" id="${id}" tabindex="0">${src.split('\n').map((l) => g_h(l)).join('\n')}</pre>`;
   }
   const g_h = (l) => window.highlightPy(l);
 
@@ -335,26 +337,13 @@
           <button type="button" class="btn small ghost" data-reset>Reset code</button>
         </div>
         <p class="hint" hidden>${fmt(c.hint)}</p>
-        <div class="sol" hidden><p class="sec-note">Try it yourself before reading. Understanding beats copying.</p><pre class="py">${c.solution.trimEnd().split('\n').map(g_h).join('\n')}</pre></div>
+        <div class="sol" hidden><p class="sec-note">Try it yourself before reading. Understanding beats copying.</p><pre class="py" tabindex="0">${c.solution.trimEnd().split('\n').map(g_h).join('\n')}</pre></div>
         <div class="out" aria-live="polite"></div>
       </article>`;
     }).join('');
 
-    box.addEventListener('keydown', (e) => {
-      if (!e.target.classList.contains('editor')) return;
-      const ta = e.target, s = ta.selectionStart, end = ta.selectionEnd;
-      if (e.key === 'Tab' && !e.shiftKey) {
-        e.preventDefault();
-        ta.setRangeText('    ', s, end, 'end');
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const line = ta.value.slice(ta.value.lastIndexOf('\n', s - 1) + 1, s);
-        const indent = (line.match(/^\s*/) || [''])[0] + (/:\s*$/.test(line) ? '    ' : '');
-        ta.setRangeText('\n' + indent, s, end, 'end');
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') e.preventDefault();
-    });
+    enhanceEditors(box);
+    bindEditorKeys(box);
     box.addEventListener('input', (e) => {
       if (!e.target.classList.contains('editor')) return;
       const card = e.target.closest('.task'), c = t.coding[+card.dataset.i], d = read(DRAFT, {});
@@ -398,6 +387,213 @@
     });
   }
 
+  /* Colours typed code: a highlighted copy sits behind a transparent textarea. */
+  function enhanceEditors(root) {
+    root.querySelectorAll('textarea.editor').forEach((ta) => {
+      if (ta.parentNode.classList.contains('ed-wrap')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'ed-wrap';
+      const bg = document.createElement('pre');
+      bg.className = 'ed-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      ta.parentNode.insertBefore(wrap, ta);
+      wrap.append(bg, ta);
+      const paint = () => {
+        bg.innerHTML = ta.value.split('\n').map(g_h).join('\n') + '\n';
+        bg.scrollTop = ta.scrollTop;
+        bg.scrollLeft = ta.scrollLeft;
+      };
+      ta.addEventListener('input', paint);
+      ta.addEventListener('scroll', () => { bg.scrollTop = ta.scrollTop; bg.scrollLeft = ta.scrollLeft; });
+      paint();
+    });
+  }
+  function bindEditorKeys(root) {
+    root.addEventListener('keydown', (e) => {
+      if (!e.target.classList.contains('editor')) return;
+      const ta = e.target, st = ta.selectionStart, end = ta.selectionEnd;
+      /* Escape then Tab leaves the editor, so keyboard users are never trapped. */
+      if (e.key === 'Escape') { ta.dataset.leave = '1'; return; }
+      if (e.key === 'Tab' && !e.shiftKey) {
+        if (ta.dataset.leave) { delete ta.dataset.leave; return; }
+        e.preventDefault();
+        ta.setRangeText('    ', st, end, 'end');
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+      } else if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const line = ta.value.slice(ta.value.lastIndexOf('\n', st - 1) + 1, st);
+        const indent = (line.match(/^\s*/) || [''])[0] + (/:\s*$/.test(line) ? '    ' : '');
+        ta.setRangeText('\n' + indent, st, end, 'end');
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+      } else delete ta.dataset.leave;
+    });
+  }
+
+  /* ---------- interview practice ---------- */
+  const MOCK_MINUTES = 30;
+  let mock = null, mockTimer = 0;
+  const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const pickFrom = (stages) => {
+    const pool = TOPICS.filter((t) => stages.includes(t.stage)).flatMap((t) => t.coding.map((c) => ({ c, t })));
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+  function renderInterview() {
+    current = { kind: 'interview' };
+    document.title = 'Interview practice · Step Through';
+    const all = window.INTERVIEW.flatMap((g) => g.items), iv = P.iv || {};
+    const history = (P.mocks || []).slice(-5).reverse();
+    app.innerHTML = header() + `<main class="topic" id="main-content" tabindex="-1">
+      <div class="wrap t-head">
+        <a class="back" href="#" data-go="">← Syllabus</a>
+        <h1>Interview practice</h1>
+        <p class="lede">Practise under time pressure, then work through real problems grouped by pattern. Finish the syllabus topics first if these feel too hard.</p>
+      </div>
+      <nav class="t-nav" aria-label="Sections"><div class="t-nav-in"><a href="#interview" data-sec="s-mock">Mock interview</a><a href="#interview" data-sec="s-pyq">Python questions</a><a href="#interview" data-sec="s-list">LeetCode by pattern</a></div></nav>
+      <div class="wrap t-body">
+        <section class="sec" id="s-mock">
+          <h2>Timed mock interview</h2>
+          <p class="sec-note">Two questions and ${MOCK_MINUTES} minutes, with no hints. Say your approach out loud and state the Big-O before you code, as you would in a real interview. Mocks don't change your syllabus progress.</p>
+          <div id="mock-box"></div>
+          ${history.length ? `<div><h3 class="mock-h">Recent mocks</h3><ul class="mock-hist">${history.map((m) => `<li>${esc(m.date)}: <b>${m.score} of ${m.total}</b> solved in ${clock(m.secs)}</li>`).join('')}</ul></div>` : ''}
+        </section>
+        ${pyqSection()}
+        <section class="sec" id="s-list">
+          <h2>Problems by pattern</h2>
+          <p class="sec-note">${all.length} free LeetCode problems, easiest first in each group. <span id="iv-count"></span> Hard problems are stretch goals. Plan on doing most of the Easy and Medium ones before a real interview.</p>
+          ${window.INTERVIEW.map((g) => `<div class="iv-group"><h3>${esc(g.title)}</h3><ul class="lc-list">${g.items.map(([n, title, slug, d]) => `<li><input type="checkbox" id="iv-${slug}" data-iv="${slug}" aria-label="Mark ${esc(title)} as solved" ${iv[slug] ? 'checked' : ''}><a href="https://leetcode.com/problems/${slug}/" target="_blank" rel="noopener noreferrer"><span class="lc-n">${n}.</span> ${esc(title)} <span class="ext" aria-hidden="true">↗</span></a><span class="d d-${d.toLowerCase()}">${d}</span></li>`).join('')}</ul></div>`).join('')}
+        </section>
+      </div>
+    </main>`;
+    const count = () => { document.getElementById('iv-count').textContent = `You've ticked ${Object.keys(P.iv || {}).length}.`; };
+    count();
+    document.getElementById('s-list').addEventListener('change', (e) => {
+      const slug = e.target.dataset.iv;
+      if (!slug) return;
+      P.iv = P.iv || {};
+      if (e.target.checked) P.iv[slug] = 1; else delete P.iv[slug];
+      save();
+      count();
+    });
+    drawMock();
+    bindPyq();
+  }
+  /* ---------- popular Python questions ---------- */
+  function pyqSection() {
+    const known = P.pq || {};
+    const total = window.PYQ.reduce((n, g) => n + g.items.length, 0);
+    return `<section class="sec" id="s-pyq">
+      <h2>Popular Python questions</h2>
+      <p class="sec-note">${total} questions that keep coming up. Answer each one out loud first, then open it to check. Tick the ones you can explain without looking.</p>
+      <div class="pq-tools">
+        <label class="pq-search" for="pq-search"><span class="sr">Search questions</span><input id="pq-search" type="search" placeholder="Search, for example decorator" autocomplete="off"></label>
+        <label class="pq-only"><input type="checkbox" id="pq-popular"> Popular only</label>
+        <span id="pq-count" aria-live="polite"></span>
+      </div>
+      ${window.PYQ.map((g) => `<div class="pq-group"><h3>${esc(g.title)}</h3><div class="reals">${g.items.map((q) => `<div class="pq-row" data-text="${esc((q.q + ' ' + q.a).toLowerCase())}" data-pop="${q.pop ? 1 : 0}">
+        <input type="checkbox" id="pq-${q.id}" data-pq="${q.id}" aria-label="I can explain: ${esc(q.q.replace(/\`/g, ''))}" ${known[q.id] ? 'checked' : ''}>
+        <details class="real"><summary>${fmt(q.q)}${q.pop ? ' <span class="d d-medium">Popular</span>' : ''}</summary><p>${fmt(q.a)}</p>${q.code ? `<pre class="py" tabindex="0">${q.code.split('\n').map(g_h).join('\n')}</pre><div class="pq-out"><small>Output</small><pre tabindex="0">${esc(q.out)}</pre></div>` : ''}${q.topic ? `<p><a href="#${q.topic}" data-go="${q.topic}">Learn this in ${esc(byId[q.topic].title)}</a></p>` : ''}</details>
+      </div>`).join('')}</div></div>`).join('')}
+      <p class="sec-note">Question topics were chosen by comparing ${window.PYQ_SOURCES.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(', ')}. "Popular" means a question appears on at least three of these four lists. The answers and code here were written for this site.</p>
+    </section>`;
+  }
+  function bindPyq() {
+    const box = document.getElementById('s-pyq'), search = document.getElementById('pq-search'), popular = document.getElementById('pq-popular');
+    const total = box.querySelectorAll('.pq-row').length;
+    const draw = () => {
+      const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      box.querySelectorAll('.pq-row').forEach((r) => {
+        const show = (!popular.checked || r.dataset.pop === '1') && words.every((w) => r.dataset.text.includes(w));
+        r.hidden = !show;
+        if (show) shown++;
+      });
+      box.querySelectorAll('.pq-group').forEach((g) => { g.hidden = !g.querySelector('.pq-row:not([hidden])'); });
+      const known = Object.keys(P.pq || {}).length;
+      document.getElementById('pq-count').textContent = `${shown === total ? '' : `Showing ${shown}. `}You can explain ${known} of ${total}.`;
+    };
+    search.addEventListener('input', draw);
+    popular.addEventListener('change', draw);
+    box.addEventListener('change', (e) => {
+      const id = e.target.dataset.pq;
+      if (!id) return;
+      P.pq = P.pq || {};
+      if (e.target.checked) P.pq[id] = 1; else delete P.pq[id];
+      save();
+      draw();
+    });
+    draw();
+  }
+  function drawMock() {
+    const box = document.getElementById('mock-box');
+    if (!box) return;
+    if (!mock) { box.innerHTML = '<button type="button" class="btn" id="mock-start">Start a mock interview</button>'; return; }
+    if (mock.done) {
+      box.innerHTML = `<p class="verdict ${mock.score === mock.qs.length ? 'ok' : 'no'}" role="status">You solved ${mock.score} of ${mock.qs.length} in ${clock(mock.used)}.</p>
+        ${mock.qs.map((q) => `<article class="task"><h3>${esc(q.c.title)} <small class="mock-from">from <a href="#${q.t.id}" data-go="${q.t.id}">${esc(q.t.title)}</a></small></h3><p>${q.solved ? 'Solved.' : 'Not solved. Compare your attempt with this answer:'}</p><pre class="py" tabindex="0">${q.c.solution.trimEnd().split('\n').map(g_h).join('\n')}</pre></article>`).join('')}
+        <button type="button" class="btn" id="mock-start">Start another</button>`;
+      return;
+    }
+    box.innerHTML = `<p class="mock-clock"><span class="sr">Time left: </span><b id="mock-left">${clock(mock.left)}</b><button type="button" class="btn small ghost" id="mock-finish">Finish now</button></p>
+      <div class="mock-tasks">${mock.qs.map((q, i) => `<article class="task" data-m="${i}"><h3>Question ${i + 1}: ${esc(q.c.title)}</h3><p class="prompt">${fmt(q.c.prompt)}</p>
+        <label class="sr" for="mock-ed-${i}">Your Python code for question ${i + 1}</label>
+        <textarea class="editor" id="mock-ed-${i}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" rows="${Math.max(9, q.c.starter.split('\n').length + 4)}">${esc(q.code)}</textarea>
+        <div class="task-btns"><button type="button" class="btn small" data-mock-run="${i}">Run and check</button></div><div class="out" aria-live="polite"></div></article>`).join('')}</div>`;
+    const tasks = box.querySelector('.mock-tasks');
+    enhanceEditors(tasks);
+    bindEditorKeys(tasks);
+  }
+  function finishMock() {
+    clearInterval(mockTimer);
+    if (!mock || mock.done) return;
+    mock.done = true;
+    mock.used = MOCK_MINUTES * 60 - mock.left;
+    mock.score = mock.qs.filter((q) => q.solved).length;
+    P.mocks = (P.mocks || []).concat({ date: new Date().toLocaleDateString(), score: mock.score, total: mock.qs.length, secs: mock.used }).slice(-20);
+    save();
+    if (current && current.kind === 'interview') renderInterview();
+  }
+  function startMock() {
+    const a = pickFrom(['s2', 's3', 's4', 's5', 's6']), b = pickFrom(['s7', 's8', 's9', 's10']);
+    mock = { left: MOCK_MINUTES * 60, qs: [a, b].map((q) => ({ ...q, code: q.c.starter, solved: false })) };
+    clearInterval(mockTimer);
+    mockTimer = setInterval(() => {
+      if (!mock || mock.done) return;
+      mock.left--;
+      const el = document.getElementById('mock-left');
+      if (el) el.textContent = clock(mock.left);
+      if (mock.left <= 0) finishMock();
+    }, 1000);
+    drawMock();
+  }
+  document.addEventListener('input', (e) => {
+    const m = e.target.closest && e.target.closest('[data-m]');
+    if (m && mock) mock.qs[+m.dataset.m].code = e.target.value;
+  });
+
+  /* ---------- backup ---------- */
+  function backup() {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(P, null, 1)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'step-through-progress.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Backup saved. Use Restore backup on any device.');
+  }
+  async function restore(file) {
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || typeof data.t !== 'object' || !data.t) throw new Error('bad');
+      P = data;
+      save();
+      route();
+      toast('Progress restored.');
+    } catch { toast("That file isn't a Step Through backup. Nothing changed."); }
+  }
+  document.addEventListener('change', (e) => { if (e.target.id === 'restore' && e.target.files[0]) restore(e.target.files[0]); });
+
   function mountHomework(t) {
     const box = document.getElementById('hw'), r = rec(t.id);
     box.innerHTML = t.homework.map((h, i) => `<li><label><input type="checkbox" id="hw-${i}" data-h="${i}" ${r.h[i] ? 'checked' : ''}><span>${fmt(h)}</span></label></li>`).join('');
@@ -420,13 +616,23 @@
   }
 
   /* ---------- routing ---------- */
-  let current = null;
+  let current = null, started = false;
   function route() {
     clearPlayers();
     const id = decodeURIComponent(location.hash.slice(1));
-    if (byId[id]) renderTopic(byId[id]); else renderHome();
+    try {
+      if (id === 'interview') renderInterview();
+      else if (byId[id]) renderTopic(byId[id]);
+      else renderHome();
+    } catch (ex) {
+      console.error(ex);
+      app.innerHTML = '<main class="wrap crash"><h1>This page failed to load</h1><p>Your progress is safe. <a href="#" data-go="">Go back to the syllabus</a>, or reload the page.</p></main>';
+    }
     syncProgress();
     window.scrollTo(0, 0);
+    const main = document.getElementById('main-content');
+    if (main && started) main.focus({ preventScroll: true });
+    started = true;
   }
   function go(id) {
     if (decodeURIComponent(location.hash.slice(1)) === id) { route(); return; }
@@ -439,13 +645,17 @@
     if (s) {
       e.preventDefault();
       const el = document.getElementById(s.dataset.sec);
-      if (el) el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      if (el) {
+        el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+        el.focus({ preventScroll: true });
+      }
       return;
     }
     const j = e.target.closest('[data-jump]');
     if (j) {
       e.preventDefault();
-      if (filter !== 'all') { filter = 'all'; document.querySelectorAll('.filters button').forEach((b) => b.classList.toggle('on', b.dataset.f === 'all')); refreshHome(); }
+      if (filter !== 'all') { filter = 'all'; document.querySelectorAll('.filters button').forEach((b) => { b.classList.toggle('on', b.dataset.f === 'all'); b.setAttribute('aria-pressed', b.dataset.f === 'all'); }); refreshHome(); }
       const el = document.getElementById(j.dataset.jump);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
       return;
@@ -453,7 +663,7 @@
     const f = e.target.closest('[data-f]');
     if (f) {
       filter = f.dataset.f;
-      document.querySelectorAll('.filters button').forEach((b) => b.classList.toggle('on', b === f));
+      document.querySelectorAll('.filters button').forEach((b) => { b.classList.toggle('on', b === f); b.setAttribute('aria-pressed', b === f); });
       refreshHome();
       return;
     }
@@ -463,6 +673,11 @@
       try { localStorage.setItem(THEME, v); } catch { /* ignore */ }
       return;
     }
+    if (e.target.id === 'mock-start') { startMock(); return; }
+    if (e.target.id === 'mock-finish') { finishMock(); return; }
+    if (e.target.id === 'backup') { backup(); return; }
+    const mr = e.target.closest('[data-mock-run]');
+    if (mr) { runMock(mr); return; }
     if (e.target.id === 'reset') {
       document.getElementById('reset-zone').innerHTML = `<span class="confirm">This clears every checkpoint. <button type="button" class="link danger" id="reset-yes">Yes, reset</button> <button type="button" class="link" id="reset-no">Keep my progress</button></span>`;
       return;
@@ -476,6 +691,18 @@
       toast('Progress reset.');
     }
   });
+  async function runMock(btn) {
+    const i = +btn.dataset.mockRun, q = mock.qs[i], card = btn.closest('.task'), out = card.querySelector('.out');
+    btn.disabled = true;
+    out.innerHTML = `<p class="running">${Py.isReady ? 'Running your code…' : 'Loading Python. This takes a few seconds the first time.'}</p>`;
+    try {
+      const res = await Py.run(card.querySelector('textarea').value, q.c.tests, q.c.setup || '');
+      const passed = res.tests.filter((x) => x.pass).length, all = !res.error && res.tests.length > 0 && passed === res.tests.length;
+      if (all) q.solved = true;
+      out.innerHTML = res.error ? `<div class="err"><b>Your code stopped with an error.</b><pre>${esc(res.error)}</pre></div>` : `<p class="verdict ${all ? 'ok' : 'no'}">${all ? 'All tests passed.' : `${passed} of ${res.tests.length} tests passed.`}</p>`;
+    } catch (ex) { out.innerHTML = `<div class="err"><b>${esc(ex.message)}</b></div>`; }
+    btn.disabled = false;
+  }
   window.addEventListener('hashchange', route);
   /* Keep several open tabs in step. */
   window.addEventListener('storage', (e) => {

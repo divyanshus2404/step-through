@@ -16,3 +16,16 @@ jobs:
           python-version: "3.12"
       - run: node tests/verify.js . "$RUNNER_TEMP/data.json"
       - run: python3 tests/verify.py "$RUNNER_TEMP/data.json"
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests
+      - run: npx playwright test
+        working-directory: tests
