@@ -40,6 +40,28 @@ for t in data:
                 exec(s["src"], {"__name__": "__main__"})
         except Exception as e:
             print("SNIPPET CRASH", t["id"], s["title"], repr(e)); fails += 1
+npy = skipped = 0
+for t in data:
+    for q in t.get("pyq", []):
+        if "code" not in q:
+            continue
+        need = q.get("needs")
+        if need:
+            try:
+                __import__(need)
+            except ImportError:
+                skipped += 1
+                continue
+        npy += 1
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                exec(q["code"], {"__name__": "__main__"})
+        except Exception as e:
+            print("PY QUESTION CRASH", q["id"], repr(e)); fails += 1; continue
+        if buf.getvalue().rstrip("\n") != q["out"].rstrip("\n"):
+            print("PY QUESTION OUTPUT", q["id"], repr(buf.getvalue()), "want", repr(q["out"])); fails += 1
+print("python question samples", npy, "skipped", skipped)
 print("coding questions", ncode, "failures", fails)
 
 if len(sys.argv) > 2:

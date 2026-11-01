@@ -16,7 +16,7 @@ Learn data structures and algorithms in Python from zero, with animations you ca
 - homework and real-life questions
 - LeetCode problems, Easy to Medium
 
-There's also an interview page with a 30-minute timed mock and 113 free LeetCode problems grouped by pattern.
+There's also an interview page with a 30-minute timed mock, 95 popular Python questions with tested code, and 113 free LeetCode problems grouped by pattern.
 
 Progress saves in your browser and is never sent anywhere. To move it to another device, use **Back up progress** and **Restore backup** at the bottom of the homepage.
 
@@ -32,6 +32,7 @@ There is nothing to install or build. Open `index.html` in a browser. Running Py
 | `js/viz-*.js` | The animations |
 | `js/content-*.js` | The curriculum |
 | `js/interview-data.js` | Interview problem list |
+| `js/python-questions.js` | Popular Python questions |
 | `js/runner.js` | Runs Python in a Web Worker |
 | `js/app.js` | Pages, routing and progress |
 | `tests/` | Content checks and browser tests |

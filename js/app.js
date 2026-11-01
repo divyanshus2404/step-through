@@ -448,6 +448,7 @@
         <h1>Interview practice</h1>
         <p class="lede">Practise under time pressure, then work through real problems grouped by pattern. Finish the syllabus topics first if these feel too hard.</p>
       </div>
+      <nav class="t-nav" aria-label="Sections"><div class="t-nav-in"><a href="#interview" data-sec="s-mock">Mock interview</a><a href="#interview" data-sec="s-pyq">Python questions</a><a href="#interview" data-sec="s-list">LeetCode by pattern</a></div></nav>
       <div class="wrap t-body">
         <section class="sec" id="s-mock">
           <h2>Timed mock interview</h2>
@@ -455,6 +456,7 @@
           <div id="mock-box"></div>
           ${history.length ? `<div><h3 class="mock-h">Recent mocks</h3><ul class="mock-hist">${history.map((m) => `<li>${esc(m.date)}: <b>${m.score} of ${m.total}</b> solved in ${clock(m.secs)}</li>`).join('')}</ul></div>` : ''}
         </section>
+        ${pyqSection()}
         <section class="sec" id="s-list">
           <h2>Problems by pattern</h2>
           <p class="sec-note">${all.length} free LeetCode problems, easiest first in each group. <span id="iv-count"></span> Hard problems are stretch goals. Plan on doing most of the Easy and Medium ones before a real interview.</p>
@@ -473,6 +475,53 @@
       count();
     });
     drawMock();
+    bindPyq();
+  }
+  /* ---------- popular Python questions ---------- */
+  function pyqSection() {
+    const known = P.pq || {};
+    const total = window.PYQ.reduce((n, g) => n + g.items.length, 0);
+    return `<section class="sec" id="s-pyq">
+      <h2>Popular Python questions</h2>
+      <p class="sec-note">${total} questions that keep coming up. Answer each one out loud first, then open it to check. Tick the ones you can explain without looking.</p>
+      <div class="pq-tools">
+        <label class="pq-search" for="pq-search"><span class="sr">Search questions</span><input id="pq-search" type="search" placeholder="Search, for example decorator" autocomplete="off"></label>
+        <label class="pq-only"><input type="checkbox" id="pq-popular"> Popular only</label>
+        <span id="pq-count" aria-live="polite"></span>
+      </div>
+      ${window.PYQ.map((g) => `<div class="pq-group"><h3>${esc(g.title)}</h3><div class="reals">${g.items.map((q) => `<div class="pq-row" data-text="${esc((q.q + ' ' + q.a).toLowerCase())}" data-pop="${q.pop ? 1 : 0}">
+        <input type="checkbox" id="pq-${q.id}" data-pq="${q.id}" aria-label="I can explain: ${esc(q.q.replace(/\`/g, ''))}" ${known[q.id] ? 'checked' : ''}>
+        <details class="real"><summary>${fmt(q.q)}${q.pop ? ' <span class="d d-medium">Popular</span>' : ''}</summary><p>${fmt(q.a)}</p>${q.code ? `<pre class="py" tabindex="0">${q.code.split('\n').map(g_h).join('\n')}</pre><div class="pq-out"><small>Output</small><pre tabindex="0">${esc(q.out)}</pre></div>` : ''}${q.topic ? `<p><a href="#${q.topic}" data-go="${q.topic}">Learn this in ${esc(byId[q.topic].title)}</a></p>` : ''}</details>
+      </div>`).join('')}</div></div>`).join('')}
+      <p class="sec-note">Question topics were chosen by comparing ${window.PYQ_SOURCES.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(n)}</a>`).join(', ')}. "Popular" means a question appears on at least three of these four lists. The answers and code here were written for this site.</p>
+    </section>`;
+  }
+  function bindPyq() {
+    const box = document.getElementById('s-pyq'), search = document.getElementById('pq-search'), popular = document.getElementById('pq-popular');
+    const total = box.querySelectorAll('.pq-row').length;
+    const draw = () => {
+      const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      box.querySelectorAll('.pq-row').forEach((r) => {
+        const show = (!popular.checked || r.dataset.pop === '1') && words.every((w) => r.dataset.text.includes(w));
+        r.hidden = !show;
+        if (show) shown++;
+      });
+      box.querySelectorAll('.pq-group').forEach((g) => { g.hidden = !g.querySelector('.pq-row:not([hidden])'); });
+      const known = Object.keys(P.pq || {}).length;
+      document.getElementById('pq-count').textContent = `${shown === total ? '' : `Showing ${shown}. `}You can explain ${known} of ${total}.`;
+    };
+    search.addEventListener('input', draw);
+    popular.addEventListener('change', draw);
+    box.addEventListener('change', (e) => {
+      const id = e.target.dataset.pq;
+      if (!id) return;
+      P.pq = P.pq || {};
+      if (e.target.checked) P.pq[id] = 1; else delete P.pq[id];
+      save();
+      draw();
+    });
+    draw();
   }
   function drawMock() {
     const box = document.getElementById('mock-box');

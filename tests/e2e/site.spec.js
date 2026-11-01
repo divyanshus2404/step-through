@@ -110,6 +110,27 @@ test('mock interview runs from start to finish', async ({ page }) => {
   await expect(page.locator('.mock-hist li')).toHaveCount(1);
 });
 
+test('Python questions can be searched, opened and ticked', async ({ page }) => {
+  await page.goto('/#interview');
+  const total = await page.locator('.pq-row').count();
+  expect(total).toBeGreaterThan(80);
+  await page.fill('#pq-search', 'decorator');
+  await expect(page.locator('.pq-row:not([hidden])').first()).toContainText('decorator');
+  expect(await page.locator('.pq-row:not([hidden])').count()).toBeLessThan(total);
+  await page.fill('#pq-search', '');
+  await page.check('#pq-popular');
+  await expect(page.locator('.pq-row:not([hidden])')).toHaveCount(await page.locator('.pq-row[data-pop="1"]').count());
+  await page.uncheck('#pq-popular');
+  const row = page.locator('.pq-row').first();
+  await row.locator('summary').click();
+  await expect(row.locator('details p').first()).toBeVisible();
+  await page.check('#pq-is-vs-eq');
+  await page.reload();
+  await expect(page.locator('#pq-is-vs-eq')).toBeChecked();
+  await expect(page.locator('#pq-count')).toContainText('You can explain 1');
+  expect(await noSidewaysScroll(page)).toBe(true);
+});
+
 test('progress can be backed up and restored', async ({ page }, info) => {
   await page.goto('/#variables');
   await page.locator('#hw input').first().check();
