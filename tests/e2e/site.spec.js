@@ -114,7 +114,8 @@ test('mock interview runs from start to finish', async ({ page }) => {
   const q = page.locator('[data-m="0"]');
   await q.locator('textarea').fill(sol);
   await q.locator('[data-mock-run]').click();
-  await expect(q.locator('.verdict')).toContainText('All tests passed', { timeout: 120000 });
+  /* Wait for the speed check as well, which runs after the small tests. */
+  await expect(q.locator('.verdict')).toHaveClass(/ok/, { timeout: 120000 });
   expect(await noSidewaysScroll(page)).toBe(true);
   await page.click('#mock-finish');
   await expect(page.locator('#mock-box .verdict')).toContainText('You solved 1 of 2');
