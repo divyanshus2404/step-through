@@ -387,3 +387,4 @@ code, pre, textarea, .ed-bg, .vz text { font-variant-ligatures: none; font-featu
 .pq-out { margin-bottom: 13px; padding: 8px 12px; background: var(--panel2); border-radius: 8px; }
 .pq-out small { color: var(--soft); font: 600 11px var(--mono); }
 .pq-out pre { margin: 0; font: 13px/1.5 var(--mono); overflow-x: auto; }
+.target { color: var(--soft); font-size: 0.93rem; }

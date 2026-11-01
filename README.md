@@ -12,7 +12,7 @@ Learn data structures and algorithms in Python from zero, with animations you ca
 - step-by-step animations with play, pause, step and speed controls, most with input you can edit
 - Python examples you can run in the browser
 - a quiz with feedback
-- coding questions checked in the browser using [Pyodide](https://pyodide.org)
+- coding questions checked in the browser using [Pyodide](https://pyodide.org), with 55 of them also timed on large inputs, so correct but slow answers don't count
 - homework and real-life questions
 - LeetCode problems, Easy to Medium
 
@@ -55,6 +55,8 @@ Browser tests run the real site with the same security headers as production, at
 ```bash
 cd tests && npm ci && npx playwright install chromium && npm test
 ```
+
+The browser tests run in Chromium, Firefox and WebKit, the engine behind Safari, including phone profiles. WebKit here is not the same as Safari on a real iPhone.
 
 All of these run on every push and pull request.
 

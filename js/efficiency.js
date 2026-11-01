@@ -1,0 +1,65 @@
+/* Speed checks. After the small tests pass, each answer runs on a large input and is timed against
+   the reference solution on the same device, so slow phones aren't marked down.
+   tests/slow-solutions.js holds a correct but slow answer for each entry, and the tests prove those fail. */
+(function () {
+  const seq = (n, m) => `[(i * 7919) % ${m} + 1 for i in range(${n})]`;
+  const P = (window.PERF = {});
+  const add = (id, target, size, pre, call, tip) => { P[id] = { target, size, pre, call, tip }; };
+  const NESTED = 'A loop inside a loop is the usual cause.';
+
+  add('has-dup', 'O(n)', '40,000 numbers', 'data = list(range(40000))', 'has_duplicate(data)', 'Remember what you have seen in a set, because `x in set` is O(1).');
+  add('missing-sum', 'O(n)', '100,000 numbers', 'data = list(range(100001))\ndata.remove(50000)', 'missing(data)', 'Use the sum formula, or a set, rather than searching the list for each number.');
+  add('max-profit', 'O(n)', '20,000 prices', `data = ${seq(20000, 100003)}`, 'max_profit(data)', 'Keep the lowest price so far instead of trying every pair of days.');
+  add('move-zeros', 'O(n)', '200,000 numbers', 'data = [i % 2 for i in range(200000)]', 'move_zeros(data)[:3]', '`remove` and `insert` shift the list every time. Write into place with one pointer.');
+  add('pair-sum', 'O(n)', '40,000 numbers', 'data = list(range(40000))', 'pair_sum(data, 79997)', NESTED + ' Walk two pointers in from the ends.');
+  add('dedupe', 'O(n)', '500,000 numbers', 'data = [i // 2 for i in range(500000)]', 'dedupe(data)', 'Deleting from a list shifts everything after it. Overwrite in place with a slow pointer.');
+  add('best-window', 'O(n)', '200,000 numbers', `data = ${seq(200000, 1009)}`, 'best_window(data, 50000)', "Don't re-add the whole window. Add the new number and subtract the old one.");
+  add('longest-unique', 'O(n)', '20,000 characters', 'data = "".join(chr(0x4e00 + i) for i in range(20000))', 'longest(data)', 'Slide a window with a set instead of restarting from every position.');
+  add('range-sum', 'O(n + q)', '100,000 numbers and queries', 'data = list(range(100000))\nqs = [(0, 99999)] * 100000', 'range_sums(data, qs)[-1]', 'Build a prefix list once, then answer each query with one subtraction.');
+  add('pivot', 'O(n)', '50,000 numbers', 'data = [1] * 50000', 'pivot(data)', 'Keep a running left sum, and work out the right side from the total.');
+  add('colors', 'O(n)', '20,000 numbers', 'data = [2 - i * 3 // 20000 for i in range(20000)]', 'sort_colors(data)[:3]', 'Count the 0s, 1s and 2s, then write them back.');
+  add('merge-two', 'O(n)', '400,000 items', 'x = list(range(0, 400000, 2))\ny = list(range(1, 400000, 2))', 'merge(x, y)[-1]', '`pop(0)` shifts the whole list every time. Use two index pointers.');
+  add('msort', 'O(n log n)', '20,000 numbers', 'data = list(range(20000, 0, -1))', 'merge_sort(data)[:3]', 'Split in half, sort each half, then merge. Slow methods compare nearly every pair.');
+  add('kth', 'O(n) on average', '200,000 numbers', `data = ${seq(200000, 200003)}`, 'kth_largest(data, 100000)', 'Removing the maximum repeatedly rescans the list. Use quickselect, or sort once.');
+  add('bsearch', 'O(log n)', '20,000 searches in 200,000 numbers', 'data = list(range(200000))', 'sum(search(data, t) for t in range(100000, 120000))', 'Halve the range with each check rather than scanning from the start.');
+  add('insert-pos', 'O(log n)', '20,000 searches in 200,000 numbers', 'data = list(range(0, 400000, 2))', 'sum(insert_pos(data, t) for t in range(200001, 240001, 2))', 'Halve the range with each check rather than scanning from the start.');
+  add('isqrt', 'O(log x)', 'x = 10¹⁸', 'pass', 'isqrt(10 ** 18)', 'Binary search on the answer rather than counting up from 0.');
+  add('koko', 'O(n log m)', 'piles of a billion', 'data = [10 ** 9] * 1000', 'min_speed(data, 10 ** 6)', 'Binary search on the speed rather than trying every speed.');
+  add('ll-cycle', 'O(n)', '100,000 nodes', 'head = build_cycle(list(range(100000)), 0)', 'has_cycle(head)', 'Searching a list of visited nodes is O(n) each time. Use fast and slow pointers, or a set.');
+  add('valid-parens', 'O(n)', '200,000 brackets', 'data = "(" * 100000 + ")" * 100000', 'is_valid(data)', 'Repeatedly replacing `()` rescans the string. Use a stack.');
+  add('nge', 'O(n)', '50,000 numbers', 'data = list(range(50000, 0, -1))', 'next_greater(data)[:3]', NESTED + ' Keep waiting positions on a stack.');
+  add('temps', 'O(n)', '40,000 days', 'data = list(range(40000, 0, -1))', 'wait_days(data)[:3]', NESTED + ' Keep waiting days on a stack.');
+  add('recent', 'O(n)', '200,000 times', 'data = list(range(200000))', 'count_recent(data)[-1]', 'Drop old times from the front of a deque rather than rescanning them all.');
+  add('win-max', 'O(n)', '100,000 numbers', `data = ${seq(100000, 100003)}`, 'window_max(data, 20000)[:3]', 'Calling `max` on each window repeats work. Keep candidates in a monotonic deque.');
+  add('first-uniq', 'O(n)', '400,000 characters', 'data = "ab" * 200000 + "c"', 'first_unique(data)', '`s.count` scans the whole string each time. Count everything once in a dict.');
+  add('two-sum', 'O(n)', '40,000 numbers', 'data = list(range(40000))', 'two_sum(data, 79997)', NESTED + ' Store each number in a dict and look up its partner.');
+  add('group', 'O(n × k log k)', '12,000 words', 'def word(i):\n    s = ""\n    for _ in range(8):\n        s += chr(97 + i % 26)\n        i = i // 26 + 7\n    return s\ndata = [word(i) for i in range(12000)]', 'sorted(sorted(g) for g in group_anagrams(data))[:2]', "Don't compare every pair of words. Use the sorted letters as a dict key.");
+  add('bst-search', 'O(log n) each', '5,000 searches in 131,071 nodes', 'def mk(lo, hi):\n    if lo > hi:\n        return None\n    m = (lo + hi) // 2\n    return TreeNode(m * 2, mk(lo, m - 1), mk(m + 1, hi))\nroot = mk(0, 131070)', 'sum(bst_has(root, v) for v in range(1, 10001, 2))', 'Use the BST rule to choose one side. Searching both sides visits every node.');
+  add('kth-heap', 'O(n log k)', '200,000 numbers', `data = ${seq(200000, 200003)}`, 'kth_largest(data, 50000)', 'Keep a heap of size k rather than re-sorting after each number.');
+  add('stones', 'O(n log n)', '100,000 stones', `data = ${seq(100000, 100003)}`, 'last_stone(data)', 'Re-sorting each round repeats work. A heap gives the two heaviest in O(log n).');
+  add('bfs-dist', 'O(V + E)', '30,000 nodes', 'n = 30000\ngraph = {i: [j for j in (i - 1, i + 1) if 0 <= j < n] for i in range(n)}', 'hops(graph, 0, n - 1)', 'Searching a list of visited nodes is O(n) each time. Use a dict or set.');
+  add('course-ok', 'O(V + E)', '20,000 courses', 'n = 20000\ndata = [[i, i + 1] for i in range(n - 1)]', 'can_finish(n, data)', 'Rescanning all courses each round is O(V²). Use a queue of courses that are ready.');
+  add('course-order', 'O(V + E)', '20,000 courses', 'n = 20000\ndata = [[i, i + 1] for i in range(n - 1)]', '_ok(n, data, order(n, data))', 'Rescanning all courses each round is O(V²). Use a queue of courses that are ready.');
+  add('dijk', 'O((V + E) log V)', '20,000 nodes', 'n = 20000\ngraph = {i: [(i + 1, 1)] if i < n - 1 else [] for i in range(n)}', 'sorted(shortest(graph, 0).items())[-1]', 'Scanning all nodes for the closest is O(V²). Use a heap.');
+  add('delay', 'O((V + E) log V)', '20,000 nodes', 'n = 20000\ndata = [[i, i + 1, 1] for i in range(1, n)]', 'delay(data, n, 1)', 'Scanning all nodes for the closest is O(V²). Use a heap.');
+  add('max-meet', 'O(n log n)', '20,000 meetings', 'data = [[i * 2, i * 2 + 1] for i in range(20000)]', 'max_meetings(data)', 'Sort by finish time once, then make a single pass.');
+  add('merge-int', 'O(n log n)', '20,000 intervals', 'data = [[i * 3, i * 3 + 1] for i in range(20000)]', 'len(merge_intervals(data))', 'Sort by start once. Then only neighbours can overlap.');
+  add('rob', 'O(n)', '100 houses', `data = ${seq(100, 101)}`, 'rob(data)', 'Plain recursion repeats the same subproblems. Save results, or fill a table.');
+  add('coin', 'O(amount × coins)', 'an amount of 150', 'pass', 'min_coins([1, 2, 5], 150)', 'Plain recursion repeats the same amounts. Save results, or fill a table.');
+  add('paths', 'O(rows × cols)', 'a 16 × 16 grid', 'pass', 'paths(16, 16)', 'Plain recursion repeats the same cells. Save results, or fill a table.');
+  add('lcs', 'O(n × m)', 'two strings of 40 letters', 'a = "ab" * 20\nb = "cd" * 20', 'lcs(a, b)', 'Plain recursion repeats the same pairs of positions. Save results, or fill a table.');
+  add('ks', 'O(n × capacity)', '40 items', 'w = [i % 7 + 1 for i in range(40)]\nv = [i * 3 % 11 + 1 for i in range(40)]', 'knapsack(w, v, 60)', 'Trying every subset takes 2ⁿ steps. Fill a table by capacity.');
+  add('partition-eq', 'O(n × sum)', '41 numbers', 'data = [4 * i + 4 for i in range(40)] + [2]', 'can_partition(data)', 'Trying every subset takes 2ⁿ steps. Track the set of reachable sums.');
+  add('tsp', 'O(2ⁿ × n²)', '12 cities', 'data = [[0 if i == j else (i * 7 + j * 13) % 17 + 1 for j in range(12)] for i in range(12)]', 'shortest_tour(data)', 'Trying every order takes n! steps. Use a table of visited set and last city.');
+  add('k-part', 'O(2ⁿ × n)', '16 numbers', 'data = [5] * 15 + [1]', 'can_split(data, 4)', 'Trying every assignment takes kⁿ steps. Use a bitmask of the numbers already used.');
+  add('kmp-find', 'O(n + m)', '200,000 letters', 't = "a" * 200000\np = "a" * 3000 + "b"', 'find(t, p)', 'Restarting at each position repeats comparisons. Use the LPS table.');
+  add('trie', 'O(L) each', '20,000 words', 'def word(i):\n    return "w" + str(i)\ndef run():\n    t = Trie()\n    for i in range(20000):\n        t.insert(word(i))\n    return sum(t.search(word(i)) + t.starts_with(word(i)) for i in range(20000))', 'run()', 'Scanning a list of words is O(n) per search. Walk the letters through nested dicts.');
+  add('count-comp', 'Nearly O(n)', '40,000 items', 'n = 40000\ndata = [[i, i + 1] for i in range(n - 1)]', 'count_groups(n, data)', 'Relabelling every item per union is O(n²). Use Union-Find with path compression.');
+  add('redundant', 'Nearly O(n)', '40,000 edges', 'n = 40000\ndata = [[i, 1] for i in range(2, n)] + [[2, 3]]', 'redundant(data)', 'Relabelling every item per edge is O(n²). Use Union-Find with path compression.');
+  add('kruskal', 'O(E log E)', '20,000 edges', 'n = 20000\ndata = [(i % 5 + 1, i, i + 1) for i in range(n - 1)]', 'mst_cost(n, data)', 'Relabelling every node per edge is O(n²). Use Union-Find with path compression.');
+  add('seg-sum', 'O(log n) each', '50,000 operations on 100,000 numbers', 'def run():\n    s = SegTree(list(range(100000)))\n    total = 0\n    for i in range(25000):\n        s.update(i, 1)\n        total += s.query(0, 99999)\n    return total', 'run()', 'Adding a slice is O(n) per query. Combine stored nodes while moving up the tree.');
+  add('seg-min', 'O((n + q) log n)', '20,000 queries on 100,000 numbers', `data = ${seq(100000, 100003)}\nqs = [(i, 99999 - i) for i in range(20000)]`, 'sum(range_min(data, qs))', 'Calling `min` on a slice is O(n) per query. Build a min segment tree.');
+  add('fw-class', 'O(log n) each', '100,000 operations', 'def run():\n    f = Fenwick(100000)\n    for i in range(1, 50001):\n        f.add(i, 1)\n    return sum(f.prefix(100000 - i) for i in range(50000)) ', 'run()', 'Adding up a whole list is O(n) per query. Move through slots with `i -= i & -i`.');
+  add('fw-inv', 'O(n log m)', '40,000 numbers', 'data = [(i * 7) % 1000 + 1 for i in range(40000)]', 'inversions(data)', NESTED + ' A Fenwick tree counts smaller values in O(log m).');
+  add('single', 'O(n)', '50,001 numbers', 'data = list(range(25000)) * 2 + [99999]', 'single(data)', '`count` scans the list each time. XOR everything once.');
+})();
