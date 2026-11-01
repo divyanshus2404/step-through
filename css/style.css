@@ -388,3 +388,32 @@ code, pre, textarea, .ed-bg, .vz text { font-variant-ligatures: none; font-featu
 .pq-out small { color: var(--soft); font: 600 11px var(--mono); }
 .pq-out pre { margin: 0; font: 13px/1.5 var(--mono); overflow-x: auto; }
 .target { color: var(--soft); font-size: 0.93rem; }
+
+/* Roadmap */
+.nav-link + .nav-link { margin-left: -4px; }
+.rm-here { padding: 18px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.rm-here > h2 { font-size: 1.35rem; }
+.rm-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.rm-tabs a { padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.92rem; font-weight: 600; text-decoration: none; }
+.rm-tabs a:hover { border-color: var(--blue); }
+.rm-steps { margin: 0; padding-left: 24px; display: grid; gap: 6px; max-width: 72ch; }
+.rm-steps a { text-decoration: none; }
+.rm-phases { padding: 0; }
+.rm-phases .stage { scroll-margin-top: 112px; }
+.rm-phases .stage-h { top: 116px; }
+.rm-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.rm-exit { padding: 13px 16px; background: var(--panel2); border-radius: 11px; }
+.rm-exit h4 { font-size: 0.98rem; margin-bottom: 4px; }
+.rm-exit ul { margin: 0; padding-left: 19px; display: grid; gap: 3px; font-size: 0.95rem; }
+.rm-try { margin-top: 9px; font-weight: 700; font-size: 0.95rem; }
+.rm-exit ul.rm-lc { list-style: none; padding: 0; margin-top: 3px; }
+.rm-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.rm-links a { text-decoration: none; margin-right: 6px; }
+@media (max-width: 480px) {
+  .brand span { display: none; }
+  .top-in { gap: 11px; }
+  .nav-link { font-size: 0.9rem; }
+  .brand { margin-right: auto; }
+}
+.rm-exit a { color: var(--ink); }
+[tabindex="-1"]:focus { outline: none; }

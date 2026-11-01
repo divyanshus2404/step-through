@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = process.argv[2] || path.join(__dirname, '..'), out = process.argv[3] || path.join(require('os').tmpdir(), 'step-through-data.json');
 const w = {}; w.window = w; w.console = console; w.Math = Math; w.JSON = JSON;
 const ctx = vm.createContext(w);
-['engine', 'viz-1', 'viz-2', 'viz-3', 'viz-4', 'content-1', 'content-2', 'content-3', 'content-4', 'interview-data', 'python-questions', 'efficiency'].forEach((f) => {
+['engine', 'viz-1', 'viz-2', 'viz-3', 'viz-4', 'content-1', 'content-2', 'content-3', 'content-4', 'interview-data', 'python-questions', 'efficiency', 'roadmap'].forEach((f) => {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 });
 const { VIZ, TOPICS, STAGES } = w;
@@ -66,6 +66,11 @@ Object.keys(w.PERF).forEach((id) => {
 });
 Object.keys(SLOW).forEach((id) => { if (!w.PERF[id]) bad('slow answer without a check ' + id); });
 if (codingIds.size !== TOPICS.flatMap((t) => t.coding).length) bad('duplicate coding question id');
+const lcSlugs = new Set(w.INTERVIEW.flatMap((g) => g.items.map((i) => i[2])).concat(TOPICS.flatMap((t) => t.leetcode.map((i) => i[2]))));
+const rmStages = w.ROADMAP.flatMap((p) => p.stages || []);
+STAGES.forEach((st) => { if (rmStages.filter((x) => x === st.id).length !== 1) bad('roadmap must use stage once: ' + st.id); });
+if (w.ROADMAP.filter((p) => p.interview).length !== 1) bad('roadmap needs one interview phase');
+w.ROADMAP.forEach((p) => { if (!p.exit.length || !p.weeks || !p.goal) bad('roadmap phase incomplete ' + p.id); p.problems.forEach((s) => { if (!lcSlugs.has(s)) bad('roadmap problem not in the lists ' + s); }); });
 const counts = {};
 Object.values(VIZ).forEach((def) => {
   const d = w.defaultValues(def);

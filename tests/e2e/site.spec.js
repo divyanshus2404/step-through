@@ -212,6 +212,42 @@ test('reasonable alternative answers are not failed for speed', async ({ page },
   expect(results.filter(([, small, state]) => !small || state !== 'ok')).toEqual([]);
 });
 
+test('the roadmap covers everything and its links reach the right tabs', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.nav-link', { hasText: 'Roadmap' }).click();
+  await expect(page.locator('h1')).toContainText('roadmap');
+  await expect(page.locator('.rm-phases .stage')).toHaveCount(9);
+  await expect(page.locator('.rm-phases .stop')).toHaveCount(45);
+  expect(await noSidewaysScroll(page)).toBe(true);
+
+  await expect(page.locator('#rm-here .btn')).toContainText('Variables and types');
+  await page.locator('#rm-here .rm-tabs a', { hasText: 'Quiz' }).click();
+  await expect(page).toHaveURL(/#variables--s-quiz$/);
+  await expect(page.locator('h1')).toContainText('Variables');
+  await expect(page.locator('#s-quiz')).toBeInViewport();
+
+  await page.locator('.t-head .eyebrow a').click();
+  await expect(page).toHaveURL(/#roadmap--phase-1$/);
+  await expect(page.locator('#phase-1')).toBeInViewport();
+
+  await page.goto('/#roadmap--phase-9');
+  await expect(page.locator('#phase-9')).toBeInViewport();
+  await page.locator('.rm-links a', { hasText: 'Popular Python questions' }).click();
+  await expect(page.locator('#s-pyq')).toBeInViewport();
+
+  await page.goto('/#two-pointers--s-lc');
+  await expect(page.locator('#s-lc')).toBeInViewport();
+  expect(await noSidewaysScroll(page)).toBe(true);
+});
+
+test('the roadmap shows live progress and moves you along', async ({ page }) => {
+  await page.goto('/#variables');
+  await page.locator('#hw input').first().check();
+  await page.goto('/#roadmap');
+  await expect(page.locator('#phase-1 .stop.is-doing')).toHaveCount(1);
+  await expect(page.locator('#rm-here .btn')).toContainText('Continue: Variables');
+});
+
 test('progress can be backed up and restored', async ({ page }, info) => {
   await page.goto('/#variables');
   await page.locator('#hw input').first().check();
@@ -234,7 +270,7 @@ for (const theme of ['light', 'dark']) {
     await page.goto('/');
     await page.evaluate((t) => localStorage.setItem('stepthrough.theme', t), theme);
     const bad = [];
-    for (const hash of ['', '#binary-search', '#interview']) {
+    for (const hash of ['', '#binary-search', '#interview', '#roadmap']) {
       await page.goto('/' + hash);
       await page.reload();
       await page.waitForTimeout(500);

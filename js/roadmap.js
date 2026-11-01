@@ -1,0 +1,31 @@
+/* The learning roadmap. Week counts are a rough guide for about an hour a day, six days a week. */
+window.ROUTINE = [
+  ['s-explain', 'Explain', 'Read the idea and the real-world comparison.'],
+  ['s-watch', 'Watch', 'Step through each animation, then change the input and predict what happens.'],
+  ['s-python', 'Python', 'Read the code line by line, and run it.'],
+  ['s-quiz', 'Quiz', 'Test yourself. Read the feedback on anything you miss.'],
+  ['s-code', 'Practice', 'Solve the coding questions yourself. Use the hint before the solution.'],
+  ['s-home', 'Homework', 'Do the tasks away from the page, on paper where you can.'],
+  ['s-real', 'Real life', 'Answer out loud before you open each answer.'],
+  ['s-lc', 'LeetCode', 'Solve at least one Easy problem, and a Medium once you feel ready.'],
+];
+window.ROADMAP = [
+  { id: 'phase-1', stages: ['s0'], weeks: 2, title: 'Get comfortable with Python', goal: 'Learn just enough Python to read and write simple programs. No experience needed.',
+    exit: ['You can write a loop, an if and a function without looking anything up', 'You know when to use a list, a dict or a set'], problems: ['fizz-buzz', 'contains-duplicate'] },
+  { id: 'phase-2', stages: ['s1', 's2'], weeks: 3, title: 'Measure code and master arrays', goal: 'Learn to spot slow code, then learn the patterns behind most array and string problems.',
+    exit: ['You can state the Big-O of a simple function', 'You can recognise when two pointers or a sliding window fits'], problems: ['best-time-to-buy-and-sell-stock', 'longest-substring-without-repeating-characters'] },
+  { id: 'phase-3', stages: ['s3', 's4'], weeks: 3, title: 'Recursion, sorting and searching', goal: 'Learn to break a problem into smaller copies of itself. Later topics depend on this one, so take your time.',
+    exit: ['You can write a recursive function with a clear base case', 'You can write binary search without off-by-one mistakes'], problems: ['binary-search', 'koko-eating-bananas'] },
+  { id: 'phase-4', stages: ['s5', 's6'], weeks: 3, title: 'Linked lists, stacks, queues and hashing', goal: 'Learn the everyday building blocks, and how a dict turns a slow search into an instant one.',
+    exit: ['You can reverse a linked list from memory', 'You reach for a dict or set when a nested loop looks likely'], problems: ['valid-parentheses', 'reverse-linked-list', 'group-anagrams'] },
+  { id: 'phase-5', stages: ['s7'], weeks: 2, title: 'Trees and heaps', goal: 'Move from straight lines to hierarchies, using recursion as your main tool.',
+    exit: ['You can write all the tree traversals', 'You know when a heap beats sorting'], problems: ['binary-tree-level-order-traversal', 'kth-largest-element-in-an-array'] },
+  { id: 'phase-6', stages: ['s8'], weeks: 3, title: 'Graphs', goal: 'Model maps, networks and dependencies. Many hard-looking problems turn out to be graphs.',
+    exit: ['You can write BFS and DFS without help', 'You can choose between BFS, Dijkstra and Bellman-Ford'], problems: ['number-of-islands', 'course-schedule'] },
+  { id: 'phase-7', stages: ['s9'], weeks: 4, title: 'Greedy, backtracking and dynamic programming', goal: 'Learn the big problem-solving strategies. Dynamic programming takes most people the longest, so expect to repeat it.',
+    exit: ['You can define `dp[i]` in plain words before writing code', 'You can explain why a greedy choice works, or find an example where it fails'], problems: ['subsets', 'coin-change', 'longest-common-subsequence'] },
+  { id: 'phase-8', stages: ['s10'], weeks: 2, title: 'Advanced structures', goal: 'Add specialist tools for prefixes, groups and range queries. Learn what each is for, even if you rarely write one.',
+    exit: ['You can say when to use a trie, Union-Find or a segment tree', 'You can write Union-Find from memory'], problems: ['implement-trie-prefix-tree', 'redundant-connection'] },
+  { id: 'phase-9', interview: true, weeks: 6, title: 'Get interview ready', goal: 'Turn knowledge into performance. Go back to any earlier topic whenever a problem exposes a gap.',
+    exit: ['You can explain every Popular Python question without looking', 'You have solved most Easy and Medium problems by pattern', 'You can solve both mock questions in 30 minutes, three times running'], problems: [] },
+];
