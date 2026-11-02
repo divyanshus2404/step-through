@@ -75,7 +75,8 @@
   /* ---------- shell ---------- */
   function header() {
     return `<a class="skip" href="#" data-sec="main-content">Skip to content</a><header class="top"><div class="top-in">
-      <a class="brand" href="#" data-go=""><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="20" width="7" height="9" rx="2" class="b1"/><rect x="12.5" y="12" width="7" height="17" rx="2" class="b2"/><rect x="22" y="3" width="7" height="26" rx="2" class="b3"/></svg><span>Step Through</span></a>
+      <a class="brand" href="#" data-go="" aria-label="Step Through home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="20" width="7" height="9" rx="2" class="b1"/><rect x="12.5" y="12" width="7" height="17" rx="2" class="b2"/><rect x="22" y="3" width="7" height="26" rx="2" class="b3"/></svg><span>Step Through</span></a>
+      <a class="nav-link" href="#roadmap" data-go="roadmap">Roadmap</a>
       <a class="nav-link" href="#interview" data-go="interview">Interview</a>
       <div class="top-meter" title="All checkpoints across the syllabus"><span class="meter"><i data-bar></i></span><b data-pct></b></div>
       <button type="button" class="theme" id="theme-toggle" aria-label="Switch between light and dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 7a5 5 0 0 1 0 10z" class="half"/></svg></button>
@@ -169,7 +170,7 @@
     const cta = document.getElementById('hero-cta');
     if (cta) {
       const started = TOPICS.some((x) => status(x).state !== 'todo');
-      cta.innerHTML = nx ? `<a class="btn" href="#${nx.id}" data-go="${nx.id}">${started ? 'Continue' : 'Start'}: ${esc(nx.title)}</a><a class="btn ghost" href="#interview" data-go="interview">Interview practice</a><span class="sub">${started ? `Topic ${nx.n} of ${TOPICS.length - 1}` : 'Begins with variables. No setup needed.'}</span>` : '<span class="sub">You have learned every topic in the syllabus.</span>';
+      cta.innerHTML = nx ? `<a class="btn" href="#${nx.id}" data-go="${nx.id}">${started ? 'Continue' : 'Start'}: ${esc(nx.title)}</a><a class="btn ghost" href="#roadmap" data-go="roadmap">See the roadmap</a><span class="sub">${started ? `Topic ${nx.n} of ${TOPICS.length - 1}` : 'Begins with variables. No setup needed.'}</span>` : '<span class="sub">You have learned every topic in the syllabus.</span>';
     }
     const c = document.getElementById('counts');
     if (c) c.innerHTML = `<span><b>${t.done}</b> learned</span><span><b>${t.doing}</b> in progress</span><span><b>${t.todo}</b> left</span><span class="c-pct"><b>${t.pct}%</b> of checkpoints</span>`;
@@ -177,6 +178,64 @@
     if (sg) sg.innerHTML = stageBoard();
     const sy = document.getElementById('syllabus');
     if (sy) sy.innerHTML = syllabusHTML();
+  }
+
+  /* ---------- roadmap ---------- */
+  const phaseOf = (t) => window.ROADMAP.find((p) => p.stages && p.stages.includes(t.stage));
+  const lcBySlug = {};
+  window.INTERVIEW.forEach((g) => g.items.forEach((i) => (lcBySlug[i[2]] = i)));
+  TOPICS.forEach((t) => t.leetcode.forEach((i) => (lcBySlug[i[2]] = i)));
+  function renderRoadmap() {
+    current = { kind: 'roadmap' };
+    document.title = 'Roadmap · Step Through';
+    const nx = nextTopic(), totalWeeks = window.ROADMAP.reduce((n, p) => n + p.weeks, 0), months = Math.round(totalWeeks / 4.3);
+    const pqTotal = window.PYQ.reduce((n, g) => n + g.items.length, 0), lcTotal = window.INTERVIEW.reduce((n, g) => n + g.items.length, 0);
+    const tabs = (t) => window.ROUTINE.map(([sec, label]) => `<a href="#${t.id}--${sec}" data-go="${t.id}--${sec}">${label}</a>`).join('');
+    const nxPhase = nx ? phaseOf(nx) : null;
+    app.innerHTML = header() + `<main class="topic" id="main-content" tabindex="-1">
+      <div class="wrap t-head">
+        <a class="back" href="#" data-go="">← Syllabus</a>
+        <h1>Your DSA roadmap</h1>
+        <p class="lede">Nine phases, from your first line of Python to interview ready. Follow them in order. At about an hour a day, six days a week, expect around ${months} months. Going slower is fine.</p>
+      </div>
+      <nav class="t-nav" aria-label="Phases"><div class="t-nav-in">${window.ROADMAP.map((p, i) => `<a href="#roadmap--${p.id}" data-sec="${p.id}">Phase ${i + 1}</a>`).join('')}</div></nav>
+      <div class="wrap t-body">
+        <section class="sec rm-here" id="rm-here">
+          <h2>${nx ? 'You are here' : 'Every topic learned'}</h2>
+          ${nx ? `<p><a class="btn" href="#${nx.id}" data-go="${nx.id}">${TOPICS.some((x) => status(x).state !== 'todo') ? 'Continue' : 'Start'}: ${esc(nx.title)}</a></p>
+          <p class="sec-note">Phase ${window.ROADMAP.indexOf(nxPhase) + 1}: ${esc(nxPhase.title)}. Jump straight to a tab in this topic:</p>
+          <div class="rm-tabs">${tabs(nx)}</div>` : `<p class="sec-note">Move on to <a href="#roadmap--phase-9" data-go="roadmap--phase-9">getting interview ready</a>.</p>`}
+        </section>
+        <section class="sec" id="rm-routine">
+          <h2>How to study each topic</h2>
+          <p class="sec-note">Every topic page has the same tabs. Go through them in this order. Plan on about two sittings per topic.</p>
+          <ol class="rm-steps">${window.ROUTINE.map(([sec, label, text]) => `<li>${nx ? `<a href="#${nx.id}--${sec}" data-go="${nx.id}--${sec}"><b>${label}</b></a>` : `<b>${label}</b>`} ${esc(text)}</li>`).join('')}</ol>
+          <p class="sec-note">A topic counts as learned once you've finished its four checkpoints: Watch, Quiz, Practice and Homework.</p>
+        </section>
+        <div class="syllabus rm-phases">${window.ROADMAP.map((p, i) => {
+          const list = p.stages ? TOPICS.filter((t) => p.stages.includes(t.stage)) : [];
+          const done = list.filter((t) => status(t).state === 'done').length;
+          const lc = p.problems.map((s) => lcBySlug[s]);
+          return `<section class="stage" id="${p.id}">
+            <div class="stage-h">
+              <p class="eyebrow">Phase ${i + 1} of ${window.ROADMAP.length}${p === nxPhase ? ' · <span class="lvl lvl-beginner">You are here</span>' : ''}</p>
+              <h3>${esc(p.title)}</h3>
+              <p class="stage-b">${esc(p.goal)}</p>
+              <p class="stage-c">About ${p.weeks} weeks${list.length ? ` · <b>${done}</b> of ${list.length} learned` : ''}</p>
+            </div>
+            <div class="rm-body">
+              ${list.length ? `<ol class="route">${list.map((t) => { const st = status(t); return `<li class="stop is-${st.state}"><a href="#${t.id}" data-go="${t.id}"><span class="dot" aria-hidden="true"></span><span class="num">[${pad(t.n)}]</span><span class="tt"><b>${esc(t.title)}</b><small>${esc(t.tagline)}</small></span><span class="meta">${pips(st)}<span class="pill p-${st.state}">${STATE_LABEL[st.state]}</span></span></a></li>`; }).join('')}</ol>` : `<ul class="rm-links">
+                <li><a href="#interview--s-pyq" data-go="interview--s-pyq"><b>Popular Python questions</b></a> You can explain ${Object.keys(P.pq || {}).length} of ${pqTotal}.</li>
+                <li><a href="#interview--s-list" data-go="interview--s-list"><b>LeetCode by pattern</b></a> You've ticked ${Object.keys(P.iv || {}).length} of ${lcTotal}.</li>
+                <li><a href="#interview--s-mock" data-go="interview--s-mock"><b>Timed mock interviews</b></a> You've done ${(P.mocks || []).length}. Start with one a week.</li>
+              </ul>`}
+              <div class="rm-exit"><h4>Move on when</h4><ul>${p.exit.map((x) => `<li>${fmt(x)}</li>`).join('')}</ul>
+              ${lc.length ? `<p class="rm-try">Prove it, with no hints:</p><ul class="rm-lc">${lc.map(([n, title, slug, d]) => `<li><a href="https://leetcode.com/problems/${slug}/" target="_blank" rel="noopener noreferrer"><span class="lc-n">${n}.</span> ${esc(title)} <span class="ext" aria-hidden="true">↗</span></a> <span class="d d-${d.toLowerCase()}">${d}</span></li>`).join('')}</ul>` : ''}</div>
+            </div>
+          </section>`;
+        }).join('')}</div>
+      </div>
+    </main>`;
   }
 
   /* ---------- topic page ---------- */
@@ -191,7 +250,7 @@
     app.innerHTML = header() + `<main class="topic" id="main-content" tabindex="-1">
       <div class="wrap t-head">
         <a class="back" href="#" data-go="">← Syllabus</a>
-        <p class="eyebrow">${esc(st.title)} · <span class="lvl lvl-${st.level.toLowerCase()}">${st.level}</span> · about ${t.mins} min</p>
+        <p class="eyebrow">${esc(st.title)} · <span class="lvl lvl-${st.level.toLowerCase()}">${st.level}</span> · about ${t.mins} min · <a href="#roadmap--${phaseOf(t).id}" data-go="roadmap--${phaseOf(t).id}">Roadmap phase ${window.ROADMAP.indexOf(phaseOf(t)) + 1}</a></p>
         <h1><span class="num">[${pad(t.n)}]</span> ${esc(t.title)}</h1>
         <p class="lede">${esc(t.tagline)}</p>
         <div class="checks" id="checks"></div>
@@ -642,10 +701,12 @@
   let current = null, started = false;
   function route() {
     clearPlayers();
-    const id = decodeURIComponent(location.hash.slice(1));
+    /* A link can name a tab too: #two-pointers--s-quiz opens that topic at its quiz. */
+    const [page, section] = decodeURIComponent(location.hash.slice(1)).split('--');
     try {
-      if (id === 'interview') renderInterview();
-      else if (byId[id]) renderTopic(byId[id]);
+      if (page === 'interview') renderInterview();
+      else if (page === 'roadmap') renderRoadmap();
+      else if (byId[page]) renderTopic(byId[page]);
       else renderHome();
     } catch (ex) {
       console.error(ex);
@@ -656,6 +717,12 @@
     const main = document.getElementById('main-content');
     if (main && started) main.focus({ preventScroll: true });
     started = true;
+    const target = section && document.getElementById(section);
+    if (target) {
+      target.scrollIntoView({ block: 'start' });
+      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+    }
   }
   function go(id) {
     if (decodeURIComponent(location.hash.slice(1)) === id) { route(); return; }
@@ -735,7 +802,7 @@
   window.addEventListener('hashchange', route);
   /* Keep several open tabs in step. */
   window.addEventListener('storage', (e) => {
-    if (e.key === KEY) { P = read(KEY, { t: {} }); syncProgress(); }
+    if (e.key === KEY) { P = read(KEY, { t: {} }); syncProgress(); if (current && current.kind === 'roadmap') renderRoadmap(); }
   });
   route();
   connectCloud().catch(() => {});
