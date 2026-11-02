@@ -96,12 +96,14 @@ def check(i):
             out.append(f"SLOW ANSWER WRONG {i}: {[x[:3] for x in r if not x[3]]}"[:300])
     except Exception as e:
         out.append(f"SLOW ANSWER CRASH {i}: {e!r}")
-    secs2, err2 = timed(q, meta["slow"][i], p, 6)
+    # Matches the site's budget (over 30 times the reference and over 1.5 seconds), with double that as a safety margin.
+    budget = max(1.5, 30 * max(secs or 0, 0))
+    secs2, err2 = timed(q, meta["slow"][i], p, 2 * budget + 1)
     if secs2 is not None:
-        out.append(f"SLOW ANSWER NOT CAUGHT {i}: {secs2} {err2}")
+        out.append(f"SLOW ANSWER NOT CAUGHT {i}: slow {secs2:.2f}s, reference {secs:.3f}s, budget {budget:.1f}s {err2}")
     return out
 if meta.get("perf"):
-    with cf.ThreadPoolExecutor(6) as ex:
+    with cf.ThreadPoolExecutor(3) as ex:
         for out in ex.map(check, list(meta["perf"])):
             for line in out:
                 print(line); fails += 1
