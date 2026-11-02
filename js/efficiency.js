@@ -18,7 +18,7 @@
   add('range-sum', 'O(n + q)', '100,000 numbers and queries', 'data = list(range(100000))\nqs = [(0, 99999)] * 100000', 'range_sums(data, qs)[-1]', 'Build a prefix list once, then answer each query with one subtraction.');
   add('pivot', 'O(n)', '50,000 numbers', 'data = [1] * 50000', 'pivot(data)', 'Keep a running left sum, and work out the right side from the total.');
   add('colors', 'O(n)', '20,000 numbers', 'data = [2 - i * 3 // 20000 for i in range(20000)]', 'sort_colors(data)[:3]', 'Count the 0s, 1s and 2s, then write them back.');
-  add('merge-two', 'O(n)', '400,000 items', 'x = list(range(0, 400000, 2))\ny = list(range(1, 400000, 2))', 'merge(x, y)[-1]', '`pop(0)` shifts the whole list every time. Use two index pointers.');
+  add('merge-two', 'O(n)', '1,000,000 items', 'x = list(range(0, 1000000, 2))\ny = list(range(1, 1000000, 2))', 'merge(x, y)[-1]', '`pop(0)` shifts the whole list every time. Use two index pointers.');
   add('msort', 'O(n log n)', '20,000 numbers', 'data = list(range(20000, 0, -1))', 'merge_sort(data)[:3]', 'Split in half, sort each half, then merge. Slow methods compare nearly every pair.');
   add('kth', 'O(n) on average', '200,000 numbers', `data = ${seq(200000, 200003)}`, 'kth_largest(data, 100000)', 'Removing the maximum repeatedly rescans the list. Use quickselect, or sort once.');
   add('bsearch', 'O(log n)', '20,000 searches in 200,000 numbers', 'data = list(range(200000))', 'sum(search(data, t) for t in range(100000, 120000))', 'Halve the range with each check rather than scanning from the start.');
